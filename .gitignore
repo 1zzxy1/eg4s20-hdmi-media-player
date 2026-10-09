@@ -1,0 +1,10 @@
+build/
+__pycache__/
+*.pyc
+*.vcd
+*.db
+*_Runs/
+*.log
+*.bit
+*.bin
+*.img
