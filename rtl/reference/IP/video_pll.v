@@ -23,12 +23,14 @@
 module video_pll (
   refclk,
   reset,
+  locked,
   clk0_out,
   clk1_out 
 );
 
   input refclk;
   input reset;
+  output locked;
   output clk0_out;
   output clk1_out;
 
@@ -67,7 +69,7 @@ module video_pll (
     .refclk(refclk),
     .reset(reset),
     .stdby(1'b0),
-    .extlock(open),
+    .extlock(locked),
     .load_reg(1'b0),
     .psclk(1'b0),
     .psdown(1'b0),

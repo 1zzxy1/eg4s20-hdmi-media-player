@@ -67,13 +67,16 @@ wire [31:0] next_scan_sector_if_miss;
 assign ready = (state == ST_IDLE);
 assign header_match = (header_0 == "B") &&
                       (header_1 == "M") &&
-                      (width[15:0]  == bmp_width) &&
-                      (height[15:0] == bmp_height) &&
+                      (width  == {16'd0,bmp_width}) &&
+                      (height == {16'd0,bmp_height}) &&
+                      (pixel_offset >= 54) && (pixel_offset <= 4096) &&
+                      (file_len >= pixel_offset + 32'd921600) &&
+                      (file_len <= pixel_offset + 32'd921600 + 32'd4096) &&
                       (bit_count    == 16'd24) &&
                       (compression  == 32'd0);
 assign bmp_data_valid = (sd_sec_read_data_valid == 1'b1) &&
                         (bmp_len_cnt >= pixel_offset) &&
-                        (bmp_len_cnt <  file_len);
+                        (bmp_len_cnt < pixel_offset + 32'd921600);
 assign file_sector_count = (file_len == 32'd0) ? 32'd1 : ((file_len + 32'd511) >> 9);
 assign next_scan_sector_if_match = scan_sector + file_sector_count;
 assign next_scan_sector_if_miss  = scan_sector + 32'd1;

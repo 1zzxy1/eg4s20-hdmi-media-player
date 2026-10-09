@@ -5,6 +5,7 @@ __pycache__/
 *.db
 *_Runs/
 *.log
+*.logw
 *.bit
 *.bin
 *.img

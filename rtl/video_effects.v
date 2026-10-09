@@ -15,7 +15,6 @@ module video_effects(
     reg de_prev, vs_prev;
     reg [9:0] x, y;
     wire [9:0] px = de_prev ? x : 10'd0;
-    wire [9:0] py = (!de_prev && de) ? y : y;
     function [7:0] adjust;
         input [7:0] c;
         input [1:0] mode;
@@ -46,7 +45,7 @@ module video_effects(
                  adjust(rgb[7:0], settings[1:0])} : 24'd0;
             // Green: committed frame; amber: waiting for a frame.
             // Four bars encode brightness mode; screen content stays static per frame.
-            if (de && settings[2] && py >= 8 && py < 24 && px >= 8 && px < 104)
+            if (de && settings[2] && y >= 8 && y < 24 && px >= 8 && px < 88)
                 if (px < 24) rgb_o <= image_valid ? 24'h00c040 : 24'hff8000;
                 else if (px[3:0] < 12)
                     rgb_o <= ((px - 24) >> 4) <= settings[1:0] ? 24'hffffff : 24'h303030;

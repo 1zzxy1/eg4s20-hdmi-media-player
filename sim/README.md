@@ -1,3 +1,5 @@
 # 仿真
 
-此目录用于 Icarus Verilog 测试平台和波形检查。加密的安路 SDRAM/HDMI IP 需在 TD 环境中验证，不能由 Icarus 直接展开。
+运行 `python scripts/test.py` 执行 6 个自检测试平台：音频采样/ACR、两帧 AXIS、帧边界提交、完整 BMP、亮度/消隐、完整一帧 SDRAM 写地址和垂直翻转。
+
+BMP 仿真使用扇区响应模型，帧写测试假设 FIFO 有数据。这些测试不覆盖实际 SD SPI 线路、加密 SDRAM 刷新仲裁、HDMI 数据岛协议或整机图像正确性。加密 IP 由 TD 进行展开、综合和时序检查，未用空模块替代为“系统仿真成功”。

@@ -15,6 +15,8 @@ module sd_card_bmp #(
     output reg                  display_valid,
 
     input                       write_finish_toggle,
+    input                       display_ack_toggle,
+    output reg                  display_commit_toggle,
     output reg [1:0]            write_buf_idx,
     output reg [1:0]            disp_buf_idx,
 
@@ -65,6 +67,9 @@ reg              load_busy;
 
 // bmp_ready 先表示“源文件读取/送 FIFO 完成”；真正切显示要等 write_finish_toggle 同步后
 reg              source_done_seen;
+reg              memory_done_seen;
+reg              awaiting_display;
+reg [2:0]        display_ack_sync;
 
 // 同步 mem_clk 域的 write_finish_toggle
 reg [2:0]        wrfin_tgl_sync;
@@ -162,9 +167,14 @@ always @(posedge clk or posedge rst) begin
         next_req_pending      <= 1'b0;
         load_busy             <= 1'b0;
         source_done_seen      <= 1'b0;
+        memory_done_seen      <= 1'b0;
+        awaiting_display      <= 1'b0;
+        display_commit_toggle <= 1'b0;
+        display_ack_sync      <= 0;
         display_valid         <= 1'b0;
     end else begin
         wrfin_tgl_sync   <= {wrfin_tgl_sync[1:0], write_finish_toggle};
+        display_ack_sync <= {display_ack_sync[1:0], display_ack_toggle};
         scan_start_pulse <= 1'b0;
         load_start_pulse <= 1'b0;
 
@@ -186,6 +196,9 @@ always @(posedge clk or posedge rst) begin
             next_req_pending      <= 1'b0;
             load_busy             <= 1'b0;
             source_done_seen      <= 1'b0;
+            memory_done_seen      <= 1'b0;
+            awaiting_display      <= 1'b0;
+            display_commit_toggle <= 1'b0;
             display_valid         <= 1'b0;
         end else begin
             // 扫描阶段缓存前 4 张图的起始 sector
@@ -207,13 +220,24 @@ always @(posedge clk or posedge rst) begin
                 source_done_seen <= 1'b1;
 
             // 只有真正收到 write_finish_toggle 脉冲，才提交新图并切换显示缓冲区
-            if (load_busy && source_done_seen && write_finish_pulse) begin
-                load_busy             <= 1'b0;
+            if (load_busy && write_finish_pulse)
+                memory_done_seen <= 1'b1;
+
+            if (load_busy && !awaiting_display && source_done_seen && memory_done_seen) begin
+                awaiting_display      <= 1'b1;
+                display_commit_toggle <= ~display_commit_toggle;
                 source_done_seen      <= 1'b0;
+                memory_done_seen      <= 1'b0;
                 disp_buf_idx          <= pending_buf_idx;
                 img_idx               <= load_idx;
                 display_valid         <= 1'b1;
                 first_image_committed <= 1'b1;
+            end
+            // Do not recycle the old front buffer until the next frame reader
+            // has selected the new one. Payload stays stable until this ack.
+            if (awaiting_display && display_ack_sync[2] == display_commit_toggle) begin
+                awaiting_display <= 1'b0;
+                load_busy <= 1'b0;
             end
 
             // 上电后自动发起一次“扫描前 4 张 BMP”
@@ -341,7 +365,7 @@ sd_card_top sd_card_top_m0(
     .sd_sec_read_end        (sd_sec_read_end),
     .sd_sec_write           (1'b0),
     .sd_sec_write_addr      (32'd0),
-    .sd_sec_write_data      (),
+    .sd_sec_write_data      (8'd0),
     .sd_sec_write_data_req  (),
     .sd_sec_write_end       ()
 );

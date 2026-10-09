@@ -7,7 +7,7 @@
 
 `define DEBUG
 
-`include "../user_source/hdl_source/include/global_def.v"
+`include "global_def.v"
 
 module sdram(
     `ifdef SIMULATION

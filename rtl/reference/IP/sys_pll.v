@@ -16,14 +16,15 @@
 //	Clock information:
 //		Clock name	| Frequency 	| Phase shift
 //		C0        	| 100.000000MHZ	| 0.0000  DEG  
-//		C1        	| 125.000000MHZ	| 0.0000  DEG  
-//		C2        	| 125.000000MHZ	| 180.0000 DEG  
+//		C1        	| 40.000000MHz 	| 0.0000  DEG
+//		C2        	| 40.000000MHz 	| 172.8000 DEG
 ///////////////////////////////////////////////////////////////////////////////
 `timescale 1 ns / 100 fs
 
 module sys_pll (
   refclk,
   reset,
+  locked,
   clk0_out,
   clk1_out,
   clk2_out 
@@ -31,11 +32,14 @@ module sys_pll (
 
   input refclk;
   input reset;
+  output locked;
   output clk0_out;
   output clk1_out;
   output clk2_out;
 
   wire clk0_buf;
+  wire clk1_buf;
+  EG_LOGIC_BUFG bufg_memory (.i(clk1_buf), .o(clk1_out));
 
   EG_LOGIC_BUFG bufg_feedback (
     .i(clk0_buf),
@@ -63,18 +67,18 @@ module sys_pll (
     .CLKC0_CPHASE(9),
     .CLKC0_FPHASE(0),
     .CLKC1_ENABLE("ENABLE"),
-    .CLKC1_DIV(8),
-    .CLKC1_CPHASE(7),
+    .CLKC1_DIV(25),
+    .CLKC1_CPHASE(24),
     .CLKC1_FPHASE(0),
     .CLKC2_ENABLE("ENABLE"),
-    .CLKC2_DIV(8),
-    .CLKC2_CPHASE(3),
+    .CLKC2_DIV(25),
+    .CLKC2_CPHASE(12),
     .CLKC2_FPHASE(0) 
   ) pll_inst (
     .refclk(refclk),
     .reset(reset),
     .stdby(1'b0),
-    .extlock(open),
+    .extlock(locked),
     .load_reg(1'b0),
     .psclk(1'b0),
     .psdown(1'b0),
@@ -88,7 +92,7 @@ module sys_pll (
     .daddr(6'b000000),
     .do({open, open, open, open, open, open, open, open}),
     .fbclk(clk0_out),
-    .clkc({open, open, clk2_out, clk1_out, clk0_buf}) 
+    .clkc({open, open, clk2_out, clk1_buf, clk0_buf}) 
   );
 
 endmodule
