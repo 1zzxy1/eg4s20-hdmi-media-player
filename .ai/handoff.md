@@ -1,5 +1,14 @@
 # 当前交接
 
+## GUI RUN真实链路修复与写卡状态
+
+- 用户点击RUN失败，实际`build/td/media_player_Runs/phy_1/run.log`报BIT-8123：未约束IO。对应syn/phy的`settings.cfg`中ADCList/SDCList均为空，原`.al`也没有约束登记。不要拿之前批处理成功证明用户GUI已成功。
+- 用原失败的`media_player_pr.db`执行bitgen，快速重现BIT-8123；新增`scripts/build_td_gui.py`以原生工程API生成并验证GUI RUN，独立目录`build/td_gui`避免旧GUI实例与批处理导出互相影响。`build_td.py`抽出共同的`stage_sources`，41个源码/头文件/约束与先前已验证stage逐字节一致。
+- 原生GUI流程实际检查ADC/SDC已读、23个IO与板卡约束一致、bitgen成功、setup/hold非负；缺约束负控制必须捕获BIT-8123。syn/phy默认流程脚本与用户GUI输出逐字节相同。重建时清理本脚本生成的run产物，拒绝陈旧日志；已有工程显式import_device后再launch，避免只依赖首次create_project的隐式初始化。
+- 新入口：`build/td_gui/media_player.al`；新位流：`build/td_gui/media_player_Runs/phy_1/media_player.bit`；具体哈希和验收值读`build/td_gui/verification.json`，源码未改变播放器功能。README/bringup/board-demo均已更新。
+- Git归档：main上`fix: preserve constraints in native TD GUI runs`，同步同一private仓库。所有run、日志和镜像保留本机，不进入Git。
+- 在本轮报错之前，用户已明确确认SD卡磁盘2可清空：65MiB四图镜像已写入并完整无缓存回读，SHA-256与镜像一致，Windows识别四张BMP和健康FAT卷。卡上64MiB分区正常，剩余空间未分配。未执行FPGA JTAG下载或Flash固化；不要继续把“TF卡未写”当当前状态。
+
 ## TD GUI与实物演示配置
 
 - 用户需要明确`.al`入口、基础/扩展勾选清单，以及4 KEY、CONFIG1、4 SW、BUZ/SW、DIG/LED对应操作。新增`docs/board-demo.md`，README/bringup链接到逐项清单。

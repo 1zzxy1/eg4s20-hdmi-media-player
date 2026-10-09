@@ -2,7 +2,9 @@
 
 2026-10-09，HX4S20C / EG4S20BG256，TD 6.2.168116、Icarus Verilog、ModelSim SE-64 10.6e。五个方向集成在同一顶层，默认 `all`。是否裁减由用户决定；尚未进行实板验收。
 
-演示配置更新：独立LED按手册第6页改为高有效；TD GUI工程补齐ADC/SDC、版本和运行配置，并在命令行结束后恢复完整`.al`（TD会自动改写它）。当前打开`build/td/media_player.al`，操作见[board-demo.md](board-demo.md)。更新后全功能重新生成位流：5597 LUT、3761 REG、19 BRAM9K、5 DSP、2 PLL、4 GCLK，setup +1.872ns、hold +0.003ns。下文七项矩阵和全套仿真记录保留为`33a468d`快照；本次没有改动图像/音频算法，没有重跑七配置矩阵或整套仿真，完成了来源/管脚检查、GUI文件/约束检查和实际TD位流构建。
+演示配置更新：独立LED按手册第6页改为高有效。全功能实测5597 LUT、3761 REG、19 BRAM9K、5 DSP、2 PLL、4 GCLK，setup +1.872ns、hold +0.003ns。下文七项矩阵和全套仿真记录保留为`33a468d`快照；本轮没有改动图像/音频算法，也没有重跑七配置矩阵或整套仿真。
+
+GUI RUN修复：此前虽然批处理位流通过，但用户GUI实际运行的`ADCList`/`SDCList`为空，最终报`BIT-8123 ... unconstrained io(s)`。仅检查`.al`文字内容不足以证明GUI约束生效。现在用`python scripts/build_td_gui.py`调用TD原生`create_project/add_files/launch_runs/wait_run`，独立工程入口改为`build/td_gui/media_player.al`。验证实际run读取ADC/SDC、23个IO位置、位流完成标记和正时序；流程脚本与用户GUI生成的syn/phy脚本逐字节相同。`--negative-control`故意不加载约束，在独立目录复现同一BIT-8123，并要求捕获该错误后才判测试通过。GUI与批处理目录分离，避免旧窗口/命令行回写混用。操作见[board-demo.md](board-demo.md)。
 
 ## 功能与可操作范围
 
@@ -61,8 +63,8 @@
 
 当前没有因器件容量超限而必须砍掉某方向的证据，全部保留供用户选择。缩放关闭约节省3 DSP；转场约2 DSP；文字层是新增LUT的主要来源。精确收益应以选定组合重新综合为准。
 
-当前演示全功能位流：`build/td/media_player.bit`。
-SHA-256：`3b5655ea15679bafc4152dcdfb57f54dd1fbb77b02ec6c54467dc89ad60200b1`。
+当前GUI演示全功能位流：`build/td_gui/media_player_Runs/phy_1/media_player.bit`，当次SHA-256、时序及验证结果见`build/td_gui/verification.json`。TD位流含时间信息，重建后哈希可能变化。
+已验证的批处理位流仍在`build/td/media_player.bit`，SHA-256为`3b5655ea15679bafc4152dcdfb57f54dd1fbb77b02ec6c54467dc89ad60200b1`。
 旧`33a468d`位流哈希为`e56dcd897e47a6dbbe7e8d6f7973143167096f7e67f24d77937b35b1b4a594b0`，不要混用新旧状态灯极性。
 
 ## 剩余板级工作

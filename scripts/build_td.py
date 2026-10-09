@@ -9,13 +9,8 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--stage', choices=['elaborate', 'synthesis', 'route', 'bitstream'], default='synthesis')
-    parser.add_argument('--td', default=os.environ.get('TD_CONSOLE', 'E:/1_software/TD/bin/td_commands_prompt.exe'))
-    parser.add_argument('--profile', choices=['all','base','text','transition','scale','color','scope'], default='all')
-    args = parser.parse_args()
-    out = ROOT / ('build/td' if args.profile=='all' else 'build/td_'+args.profile)
+def stage_sources(out, profile='all'):
+    """Share identical source, feature and SDRAM refresh settings across flows."""
     out.mkdir(parents=True, exist_ok=True)
     files = sorted(list((ROOT/'rtl').rglob('*.v')) + list((ROOT/'vendor').rglob('*.v')))
     names = set()
@@ -25,13 +20,25 @@ def main():
         shutil.copyfile(f, out/f.name)
     features=['TEXT','TRANSITION','SCALE','COLOR','SCOPE']
     (out/'feature_config.vh').write_text('\n'.join(
-        f'`define FEATURE_{name} {int(args.profile=="all" or args.profile==name.lower())}' for name in features)+'\n')
+        f'`define FEATURE_{name} {int(profile=="all" or profile==name.lower())}' for name in features)+'\n')
     # The encrypted controller uses this header to derive refresh intervals.
     # Keep vendor copy unchanged and explicitly select the actual 40MHz clock.
     header = out/'global_def.v'
     original=header.read_text()
     assert original.count('1000000000/125000000')==1, 'Refresh clock definition changed'
     header.write_text(original.replace('1000000000/125000000', '1000000000/40000000'))
+    for f in (ROOT/'constraints').glob('*'):
+        if f.suffix in ['.adc','.sdc']: shutil.copyfile(f,out/f.name)
+    return files
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--stage', choices=['elaborate', 'synthesis', 'route', 'bitstream'], default='synthesis')
+    parser.add_argument('--td', default=os.environ.get('TD_CONSOLE', 'E:/1_software/TD/bin/td_commands_prompt.exe'))
+    parser.add_argument('--profile', choices=['all','base','text','transition','scale','color','scope'], default='all')
+    args = parser.parse_args()
+    out = ROOT / ('build/td' if args.profile=='all' else 'build/td_'+args.profile)
+    files = stage_sources(out, args.profile)
     project = ET.Element('Project', Version='3', Minor='2', Path=out.as_posix())
     ET.SubElement(project, 'Project_Created_Time')
     ET.SubElement(project, 'TD_Encoding').text = 'GB2312'
@@ -75,8 +82,6 @@ def main():
     ET.indent(project)
     for suffix in ['prj','al']:
         ET.ElementTree(project).write(out/f'media_player.{suffix}',encoding='utf-8',xml_declaration=True)
-    for f in (ROOT/'constraints').glob('*'):
-        if f.suffix in ['.adc','.sdc']: shutil.copyfile(f,out/f.name)
     commands = ['open_project media_player.prj', 'import_device eagle_s20.db -package EG4S20BG256',
                 'elaborate -top media_player_top', 'read_adc hx4s20c.adc',
                 'read_sdc media_player.sdc', 'export_db media_player_elaborate.db']

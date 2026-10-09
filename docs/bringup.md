@@ -1,6 +1,6 @@
 # HX4S20C 五项扩展版上板流程
 
-按键、拨码和逐项演示表见 [board-demo.md](board-demo.md)。TD GUI打开 `build/td/media_player.al`；Programmer下载同目录 `media_player.bit`。该目录为生成工程，正式源码仍在`rtl/`。
+按键、拨码和逐项演示表见 [board-demo.md](board-demo.md)。TD GUI打开 `build/td_gui/media_player.al`；Programmer下载 `build/td_gui/media_player_Runs/phy_1/media_player.bit`。该目录为原生GUI生成工程，正式源码仍在`rtl/`。
 
 ## 先准备本地文件
 
@@ -8,7 +8,7 @@
 
 ```sh
 python scripts/verify.py
-python scripts/build_td.py --stage bitstream
+python scripts/build_td_gui.py
 python scripts/make_sd_image.py build/media/demo-advanced.img
 ```
 
@@ -23,8 +23,8 @@ python scripts/make_sd_image.py build/media/custom.img a.bmp b.bmp c.bmp d.bmp
 ## 板卡与操作
 
 1. 使用 HX4S20C，核对器件 EG4S20BG256；连接供电和 USB Cable，HDMI 接板上 A 口及带音频的显示设备。
-2. 将镜像写入一张可擦除的 SDHC 卡。**执行写卡前必须确认具体物理磁盘和现有数据可以清空**；本任务尚未执行此步骤。
-3. 先用 TD Programmer 把 `build/td/media_player.bit` 下载到 FPGA 做易失性调试。当前未执行任何下载，也未验证 PC 已识别实际板卡。
+2. 将镜像写入一张可擦除的SDHC卡。**执行写卡前必须确认具体物理磁盘和现有数据可以清空**；本机演示卡已完成经用户确认的写入和完整回读校验，更换卡需重新确认。
+3. 先用 TD Programmer 把 `build/td_gui/media_player_Runs/phy_1/media_player.bit` 下载到 FPGA 做易失性调试。RUN仅编译，不自动下载。当前未执行FPGA下载，也未验证PC已识别实际板卡。
 4. KEY1（A2）复位，KEY2（B2）下一张，KEY3（B1）开启/关闭自动轮播。启动默认手动模式，自动加载首图。
 5. SW1是亮度低位，SW2是高位：两者下=原图；仅SW1上=+32；仅SW2上=+64；两者上=−32。SW3上打开时间戳、参数面板和滚动字幕；SW4上打开音频波形/峰值。方向依据手册第18页的标准摆放。
 6. KEY4（C1）短按后松开：对比度100%→50%→150%→200%循环；长按至少1秒后松开：FADE/WIPE切换。参数于下一帧生效。

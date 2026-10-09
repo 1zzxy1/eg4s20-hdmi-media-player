@@ -4,13 +4,15 @@
 
 ## 打开和下载
 
-- TD GUI：`workspace/build/td/media_player.al`，顶层`media_player_top`，器件`EG4S20BG256`，五项扩展全开。
-- 本机完整路径：`D:\work\12_FPGA_Anlogic_TD\workspace\build\td\media_player.al`。
-- Programmer/JTAG易失下载：同目录`media_player.bit`。下载后按KEY1复位；先接好HDMI-A、打开显示器并选择对应HDMI输入。
+- TD GUI：`workspace/build/td_gui/media_player.al`，顶层`media_player_top`，器件`EG4S20BG256`，五项扩展全开。
+- 本机完整路径：`D:\work\12_FPGA_Anlogic_TD\workspace\build\td_gui\media_player.al`。关闭旧工程后打开此文件；这是独立的原生GUI工程。
+- Programmer/JTAG易失下载：`workspace/build/td_gui/media_player_Runs/phy_1/media_player.bit`。RUN仅编译，不自动下载。下载后按KEY1复位；先接好HDMI-A、打开显示器并选择对应HDMI输入。
 - 图卡镜像：`workspace/build/media/demo-advanced.img`。这是整盘镜像，不是把`.img`复制进卡；四张图按640×480、320×240、800×600、641×479排列。
-- 写卡会清空目标卡。执行前确认实际物理盘号和数据可清空；本轮没有执行写卡。建议使用8/16/32GB SDHC卡。
-- `build/td_*`是资源对比工程，演示用`build/td`。GUI重新编译可能生成自己的`*_Runs`输出；本清单指定的是脚本验证过的`build/td/media_player.bit`。
-- 生成目录源码会被构建脚本更新。修改正式实现时编辑`rtl/`，约束编辑`constraints/`，再运行`python scripts/build_td.py --stage bitstream`。
+- 写卡会清空目标卡，执行前确认实际物理盘号和数据可清空。本机演示SD卡已按用户确认完成写入和全量回读校验，更换卡须重新确认。建议使用8/16/32GB SDHC卡。
+- `build/td_gui`用于GUI演示；`build/td_gui_no_constraints`是故意缺少约束的回归负例，不可下载；`build/td`与其他profile目录用于批处理和资源对比。
+- 生成目录源码会被构建脚本更新。修改正式实现时编辑`rtl/`，约束编辑`constraints/`，再运行`python scripts/build_td_gui.py`。
+
+若旧工程RUN报`BIT-8123 ... unconstrained io(s)`：查看实际run的`settings.cfg`是否出现空`ADCList`/`SDCList`。本轮已用原生工程API修复并实际运行成功，验证文件在`build/td_gui/verification.json`。不要通过允许未约束IO来绕过错误；SD卡内容与这次编译错误无关。
 
 ## 实现清单
 
