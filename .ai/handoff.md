@@ -1,5 +1,15 @@
 # 当前交接
 
+## TD GUI与实物演示配置
+
+- 用户需要明确`.al`入口、基础/扩展勾选清单，以及4 KEY、CONFIG1、4 SW、BUZ/SW、DIG/LED对应操作。新增`docs/board-demo.md`，README/bringup链接到逐项清单。
+- 实际手册/原理图核对：SW1..4上=1下=0；CONFIG1连PROGRAM_B，不是应用复位；BUZ开关只控制板载蜂鸣器，音频仍走HDMI；DIG/LED仅切换8位数码管/8组双色灯，不控制四颗独立状态灯。
+- 修正`rtl/media_player_top.v`独立LED极性为高有效（手册第6页图2-3），前三灯亮代表就绪，LED4亮为违约。其余功能和按键映射保留。
+- `scripts/build_td.py`补TD版本、GUI约束及runs；发现TD console改写`.al`并丢掉约束列表，构建成功后恢复完整GUI工程。最初缺TD_Version导致打开失败，已修正并用真实TD重建通过。
+- 本轮验证：23引脚/来源哈希检查，`.al`所有源文件存在及ADC/SDC/runs登记检查，TD综合/布局布线/bitgen通过。5597 LUT、3761 REG、19 BRAM9K、5 DSP、2 PLL、4 GCLK；setup +1.872ns/hold +0.003ns。当前bit哈希见advanced-validation。上一轮全套仿真保留为33a468d证据，本轮没有重跑数据通路仿真和七配置矩阵。
+- Git归档：main上`fix: prepare TD GUI project and board demo controls`，同步同一private远端，不提交生成工程、日志、镜像、位流。用户已打开TD，完成后提示重新打开更新的`.al`。
+- 本轮未写物理卡、未JTAG下载或固化；实际成功仍需用户逐项观察。
+
 ## 本轮五项扩展
 
 - 用户明确要求五项先全部实现、由用户决定资源取舍；子代理仅允许OpenCode渠道DeepSeek，全部只读。主代理完成编码、独立裁决和实际工具验证。

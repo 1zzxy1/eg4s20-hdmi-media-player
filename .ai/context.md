@@ -3,7 +3,7 @@
 - 目标：2026 安路赛题一，HX4S20C / EG4S20BG256，TF SPI → BMP → SDRAM 双缓冲 → HDMI 音视频，手动切图、轮播、上电自启。
 - 实现预算：640×480 RGB888，像素按 32 位存储，两帧占 2457600 字节；25MHz 像素、125MHz TMDS、40MHz SDRAM、50MHz TF 控制域。
 - 五项扩展已整合：时间/字幕/半透明层、fade/wipe、1..1920×1..1440 BMP最近邻缩放、亮度对比度/参数OSD、PCM波形/峰值。默认all；资源取舍由用户决定。
-- 全开TD实测5673 LUT、3770 REG、19 BRAM9K、5 DSP、2 PLL、4 GCLK，setup +1.872ns、hold +0.012ns，位流已生成。25MHz对应59.524Hz，尚未硬件验收。
+- 当前演示版全开TD实测5597 LUT、3761 REG、19 BRAM9K、5 DSP、2 PLL、4 GCLK，setup +1.872ns、hold +0.003ns。修正独立LED高有效，GUI工程入口`build/td/media_player.al`含ADC/SDC及runs；操作见`docs/board-demo.md`。旧七项矩阵/全套仿真为33a468d快照。25MHz对应59.524Hz，尚未硬件验收。
 - 本机工具：Icarus Verilog、TD 6.2（`E:/1_software/TD`）、GitHub CLI。
 - GitHub：`1zzxy1/eg4s20-hdmi-media-player`，必须 private。
 - 原始资料和整个上级目录不属于 Git 工程。构建数据库、日志、位流不可入库。

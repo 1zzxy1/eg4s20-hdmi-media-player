@@ -47,6 +47,8 @@ python scripts/profile_matrix.py
 
 顶层为 `rtl/media_player_top.v`。KEY1 复位、KEY2 下一张、KEY3 开关自动轮播；KEY4 短按切对比度、长按切淡入淡出/显影。SW1/2 调亮度，SW3 开关文字层，SW4 开关波形，HDMI-A 输出音视频。
 
+TD GUI打开 **`build/td/media_player.al`**，Programmer下载 **`build/td/media_player.bit`**。工程已登记ADC/SDC及GUI运行配置；正式构建证据仍以脚本构建为准。逐项实物演示请照 [板卡演示清单](docs/board-demo.md) 操作。
+
 当前读取器是有界扇区扫描，不是 FAT 文件系统：从 LBA 2048 起，在前 64MiB 中搜索四张连续存储的 BMP。生成器默认创建混合尺寸四图 FAT16 镜像；`--native` 生成四张640×480图片供关闭缩放的配置使用。普通复制、删除后产生的碎片文件不保证支持。缩放为拉伸填满，不保持纵横比；没有双线性插值、FFT、两图交叉混合或真正的平移转场。
 
 `python scripts/verify.py` 执行引脚/来源检查、11个模块/链路测试、23个BMP场景、18帧独立黄金像素比对、原厂加密SDRAM控制器测试及原厂HDMI数字接口测试。证据在 `build/verification/`；任何步骤失败即终止。SDRAM阵列使用自建器件模型，HDMI未建完整音频接收器和模拟PHY；这些边界不会被标作“全部硬件已证明”。

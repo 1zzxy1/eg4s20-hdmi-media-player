@@ -33,21 +33,45 @@ def main():
     assert original.count('1000000000/125000000')==1, 'Refresh clock definition changed'
     header.write_text(original.replace('1000000000/125000000', '1000000000/40000000'))
     project = ET.Element('Project', Version='3', Minor='2', Path=out.as_posix())
+    ET.SubElement(project, 'Project_Created_Time')
+    ET.SubElement(project, 'TD_Encoding').text = 'GB2312'
+    ET.SubElement(project, 'TD_Version').text = '6.2.168116'
     ET.SubElement(project, 'Name').text = 'media_player'
     hw = ET.SubElement(project, 'HardWare')
     for key, val in [('Family','EG4'), ('Device','EG4S20BG256'), ('Speed','')]:
         ET.SubElement(hw,key).text = val
-    sources = ET.SubElement(ET.SubElement(project,'Source_Files'),'Verilog')
+    source_files = ET.SubElement(project,'Source_Files')
+    sources = ET.SubElement(source_files,'Verilog')
     for index, f in enumerate(files):
         node = ET.SubElement(sources,'File',Path=f.name)
         info = ET.SubElement(node,'FileInfo')
         for name, val in [('UsedInSyn','true'),('UsedInP&R','true'),('BelongTo','design_1'),('CompileOrder',str(index+1))]:
             ET.SubElement(info,'Attr',Name=name,Val=val)
+    # Register constraints for TD GUI runs as well as the explicit Tcl flow.
+    for order, (kind, filename) in enumerate([
+            ('SDC_FILE','media_player.sdc'), ('ADC_FILE','hx4s20c.adc')], start=1):
+        node = ET.SubElement(ET.SubElement(source_files,kind),'File',Path=filename)
+        info = ET.SubElement(node,'FileInfo')
+        for name, val in [('UsedInSyn','true'),('UsedInP&R','true'),
+                          ('BelongTo','constraint_1'),('CompileOrder',str(order))]:
+            ET.SubElement(info,'Attr',Name=name,Val=val)
     fs = ET.SubElement(project,'FileSets')
     ET.SubElement(fs,'FileSet',Name='design_1',Type='DesignFiles')
+    ET.SubElement(fs,'FileSet',Name='constraint_1',Type='ConstrainFiles')
     top = ET.SubElement(project,'TOP_MODULE')
     ET.SubElement(top,'MODULE').text = 'media_player_top'
     ET.SubElement(top,'CREATEINDEX').text = 'user'
+    for tag in ['Property','Device_Settings','Configurations']:
+        ET.SubElement(project,tag)
+    runs = ET.SubElement(project,'Runs')
+    for name, kind, strategy in [('syn_1','Synthesis','Default_Synthesis_Strategy'),
+                                 ('phy_1','PhysicalDesign','Default_PhysicalDesign_Strategy')]:
+        attrs = dict(Name=name,Type=kind,ConstraintSet='constraint_1',Description='',Active='true')
+        if kind=='PhysicalDesign': attrs['SynRun']='syn_1'
+        run = ET.SubElement(runs,'Run',**attrs)
+        ET.SubElement(run,'Strategy',Name=strategy)
+        ET.SubElement(run,'UserParams')
+    ET.SubElement(project,'Project_Settings')
     ET.indent(project)
     for suffix in ['prj','al']:
         ET.ElementTree(project).write(out/f'media_player.{suffix}',encoding='utf-8',xml_declaration=True)
@@ -92,6 +116,9 @@ def main():
         print('\n'.join(known))
     if result.returncode or 'BUILD_OK' not in text or 'BUILD_FAILED:' in text or unexpected:
         raise SystemExit('TD build failed; see build/td/console.log')
+    # TD console rewrites .al while loading .prj and drops constraint file-list
+    # entries. Restore the complete GUI project after the verified batch run.
+    ET.ElementTree(project).write(out/'media_player.al',encoding='utf-8',xml_declaration=True)
     print('TD '+args.stage+' passed; reports in build/td')
 
 if __name__ == '__main__': main()

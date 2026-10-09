@@ -1,5 +1,7 @@
 # HX4S20C 五项扩展版上板流程
 
+按键、拨码和逐项演示表见 [board-demo.md](board-demo.md)。TD GUI打开 `build/td/media_player.al`；Programmer下载同目录 `media_player.bit`。该目录为生成工程，正式源码仍在`rtl/`。
+
 ## 先准备本地文件
 
 在 workspace 执行：
@@ -24,9 +26,9 @@ python scripts/make_sd_image.py build/media/custom.img a.bmp b.bmp c.bmp d.bmp
 2. 将镜像写入一张可擦除的 SDHC 卡。**执行写卡前必须确认具体物理磁盘和现有数据可以清空**；本任务尚未执行此步骤。
 3. 先用 TD Programmer 把 `build/td/media_player.bit` 下载到 FPGA 做易失性调试。当前未执行任何下载，也未验证 PC 已识别实际板卡。
 4. KEY1（A2）复位，KEY2（B2）下一张，KEY3（B1）开启/关闭自动轮播。启动默认手动模式，自动加载首图。
-5. SW1/2组成亮度模式：00原图、01 +32、10 +64、11 −32；SW3打开时间戳、参数面板和滚动字幕；SW4打开音频波形/峰值。实际高低方向以板卡测量为准。
+5. SW1是亮度低位，SW2是高位：两者下=原图；仅SW1上=+32；仅SW2上=+64；两者上=−32。SW3上打开时间戳、参数面板和滚动字幕；SW4上打开音频波形/峰值。方向依据手册第18页的标准摆放。
 6. KEY4（C1）短按后松开：对比度100%→50%→150%→200%循环；长按至少1秒后松开：FADE/WIPE切换。参数于下一帧生效。
-7. LED1 SDRAM初始化完成；LED2已提交首帧；LED3 HDMI视频锁定；LED4 HDMI AXIS ready违约粘滞标志。输出按低有效设计，需核对实际LED极性。
+7. 四颗独立绿色LED高有效（手册第6页）：LED1亮=SDRAM初始化完成；LED2亮=已提交首帧；LED3亮=HDMI核锁定输入视频时序；LED4亮=HDMI AXIS ready违约粘滞标志。正常播放应前三亮、第四灭。LED3不证明显示器已经接收音视频。DIG/LED不控制这四颗灯。
 8. 屏幕应按四图切换，混合尺寸图拉伸为640×480；淡出至全黑后换图，再淡入，或用显影模式。扬声器应输出1kHz测试音，采样率48kHz；波形来自同一份PCM。
 
 ## 固化与竞赛验收

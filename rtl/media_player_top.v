@@ -130,5 +130,6 @@ module media_player_top(
     always @(posedge pix_clk or posedge rst_pix)
         if (rst_pix) axis_overrun <= 0;
         else if (axis_valid && !axis_ready && hdmi_locked) axis_overrun <= 1;
-    assign led = ~{axis_overrun, hdmi_locked, active_valid, init_done};
+    // HX4S20C manual p6: FPGA -> resistor -> LED anode; cathode -> GND.
+    assign led = {axis_overrun, hdmi_locked, active_valid, init_done};
 endmodule
