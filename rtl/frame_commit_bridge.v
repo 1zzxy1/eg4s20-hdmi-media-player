@@ -3,7 +3,7 @@
 module frame_commit_bridge(
     input wire clk, input wire rst,
     input wire commit_toggle, input wire [1:0] pending_bank,
-    input wire frame_request,
+    input wire frame_request, input wire commit_hold,
     output reg [1:0] active_bank, output reg active_valid,
     output reg ack_toggle
 );
@@ -16,7 +16,7 @@ module frame_commit_bridge(
         end else begin
             req_sync <= {req_sync[1:0], commit_toggle};
             frame_prev <= frame_request;
-            if (frame_request && !frame_prev && req_sync[2] != ack_toggle) begin
+            if (frame_request && !frame_prev && req_sync[2] != ack_toggle && !commit_hold) begin
                 active_bank <= pending_bank;
                 active_valid <= 1;
                 ack_toggle <= req_sync[2];

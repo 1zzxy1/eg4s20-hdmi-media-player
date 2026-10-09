@@ -3,7 +3,7 @@ module tb_commit;
     reg clk=0,rst=1,toggle=0,frame=0; reg [1:0] bank=0;
     always #20 clk=~clk;
     wire [1:0] active;wire valid,ack;
-    frame_commit_bridge dut(clk,rst,toggle,bank,frame,active,valid,ack);
+    frame_commit_bridge dut(clk,rst,toggle,bank,frame,1'b0,active,valid,ack);
     task tick;begin @(negedge clk);end endtask
     initial begin
         repeat(4) tick();rst=0;tick();bank=1;toggle=1;

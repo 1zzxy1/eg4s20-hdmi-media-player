@@ -1,12 +1,15 @@
+`include "feature_config.vh"
 module media_player_top(
     input wire clk, input wire rst_n, input wire key_next, input wire key_auto,
     input wire [1:0] brightness_sw, input wire overlay_sw,
+    input wire key_menu, input wire wave_sw,
     output wire [3:0] led,
     output wire HDMI_CLK_P, HDMI_D0_P, HDMI_D1_P, HDMI_D2_P,
     output wire HDMI_DDC_SCL, inout wire HDMI_DDC_SDA,
     output wire sd_ncs, sd_dclk, sd_mosi, input wire sd_miso
 );
-    wire sd_clk = clk;
+    wire sd_clk;
+    EG_LOGIC_BUFG u_control_clock(.i(clk),.o(sd_clk));
     wire mem_clk, mem_clk_shift, pix_clk, serial_clk;
     wire sys_lock, video_lock, rst_sd, rst_mem, rst_pix;
     wire arst = !rst_n || !sys_lock || !video_lock;
@@ -23,7 +26,7 @@ module media_player_top(
     wire [20:0] rd_addr, wr_addr;
     wire [31:0] mem_data, wr_data;
     wire [3:0] wr_mask;
-    wire write_req, write_ack, write_en, write_finish;
+    wire write_req, write_ack, write_en, write_finish, write_ready;
     wire [31:0] write_data, read_data;
     wire [1:0] write_bank, pending_bank, active_bank;
     wire commit_toggle, ack_toggle, active_valid;
@@ -41,17 +44,24 @@ module media_player_top(
         if (rst_mem) write_toggle <= 0;
         else if (write_finish) write_toggle <= ~write_toggle;
 
-    sd_card_bmp #(.CLK_FREQ_HZ(50_000_000), .SCAN_START_SECTOR(32'd2048), .SCAN_MAX_SECTOR(32'd131071)) u_loader(
+    sd_card_bmp #(.CLK_FREQ_HZ(50_000_000), .ENABLE_SCALE(`FEATURE_SCALE), .SCAN_START_SECTOR(32'd2048), .SCAN_MAX_SECTOR(32'd131071)) u_loader(
         .clk(sd_clk), .rst(rst_sd), .key_next(key_next), .key_auto(key_auto),
         .state_code(state_code), .bmp_width(16'd640), .bmp_height(16'd480),
         .display_valid(), .write_finish_toggle(write_toggle),
         .display_commit_toggle(commit_toggle), .display_ack_toggle(ack_toggle),
         .write_buf_idx(write_bank), .disp_buf_idx(pending_bank),
-        .write_req(write_req), .write_req_ack(write_ack_sync[1]), .write_en(write_en),
+        .write_req(write_req), .write_req_ack(write_ack_sync[1]), .write_en(write_en), .write_ready(write_ready),
         .write_data(write_data), .SD_nCS(sd_ncs), .SD_DCLK(sd_dclk),
         .SD_MOSI(sd_mosi), .SD_MISO(sd_miso));
 
-    frame_commit_bridge u_commit(.clk(pix_clk), .rst(rst_pix),
+    wire commit_hold;
+    wire [4:0] fade_gain;
+    reg read_req_prev;
+    always @(posedge pix_clk or posedge rst_pix)
+        if(rst_pix) read_req_prev<=0;else read_req_prev<=read_req;
+    transition_control #(.ENABLE(`FEATURE_TRANSITION)) u_transition(pix_clk,rst_pix,
+        read_req&&!read_req_prev,active_valid,commit_toggle,ack_toggle,commit_hold,fade_gain);
+    frame_commit_bridge u_commit(.clk(pix_clk), .rst(rst_pix), .commit_hold(commit_hold),
         .commit_toggle(commit_toggle), .pending_bank(pending_bank),
         .frame_request(read_req), .active_bank(active_bank),
         .active_valid(active_valid), .ack_toggle(ack_toggle));
@@ -72,7 +82,7 @@ module media_player_top(
         .App_wr_en(app_wr), .App_wr_addr(wr_addr), .App_wr_din(wr_data), .App_wr_dm(wr_mask),
         .write_clk(sd_clk), .write_req(write_req), .write_req_ack(write_ack), .write_finish(write_finish),
         .write_addr_0(21'd0), .write_addr_1(21'd307200), .write_addr_2(21'd0), .write_addr_3(21'd0),
-        .write_addr_index(write_bank), .write_len(21'd307200), .write_en(write_en), .write_data(write_data));
+        .write_addr_index(write_bank), .write_len(21'd307200), .write_en(write_en), .write_data(write_data), .write_ready(write_ready));
     sdram u_sdram(.Clk(mem_clk), .Clk_sft(mem_clk_shift), .Rst(rst_mem),
         .Sdr_init_done(init_done), .Sdr_init_ref_vld(refreshing), .Sdr_busy(busy),
         .App_wr_en(app_wr), .App_wr_addr(wr_addr), .App_wr_dm(wr_mask), .App_wr_din(wr_data),
@@ -80,16 +90,19 @@ module media_player_top(
 
     wire fx_hs, fx_vs, fx_de;
     wire [23:0] fx_rgb;
-    video_effects u_effects(.clk(pix_clk), .rst(rst_pix), .hs(hs), .vs(vs), .de(de), .rgb(rgb),
+    wire audio_valid, acr_valid;
+    wire [23:0] audio_left, audio_right;
+    advanced_video #(.TEXT(`FEATURE_TEXT), .COLOR(`FEATURE_COLOR), .SCOPE(`FEATURE_SCOPE),
+        .TRANSITION(`FEATURE_TRANSITION)) u_effects(.clk(pix_clk), .rst(rst_pix), .hs(hs), .vs(vs), .de(de), .rgb(rgb),
         .brightness_sw(brightness_sw), .overlay_sw(overlay_sw), .image_valid(active_valid),
+        .key_menu(key_menu), .wave_sw(wave_sw), .fade_gain(fade_gain), .wipe_mode(),
+        .pcm_valid(audio_valid), .pcm(audio_left),
         .hs_o(fx_hs), .vs_o(fx_vs), .de_o(fx_de), .rgb_o(fx_rgb));
     wire axis_user, axis_valid, axis_last, axis_ready;
     wire [23:0] axis_data;
     video_rgb_to_axis_640x480 u_axis(.I_clk(pix_clk), .I_rst(rst_pix),
         .I_vs(fx_vs), .I_de(fx_de), .I_rgb(fx_rgb), .O_video_user(axis_user),
         .O_video_valid(axis_valid), .O_video_last(axis_last), .O_video_data(axis_data));
-    wire audio_valid, acr_valid;
-    wire [23:0] audio_left, audio_right;
     wire [19:0] acr_n, acr_cts;
     pcm48_tone u_audio(.clk(pix_clk), .rst(rst_pix), .valid(audio_valid),
         .left(audio_left), .right(audio_right), .acr_valid(acr_valid), .acr_n(acr_n), .acr_cts(acr_cts));

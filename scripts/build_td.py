@@ -13,8 +13,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--stage', choices=['elaborate', 'synthesis', 'route', 'bitstream'], default='synthesis')
     parser.add_argument('--td', default=os.environ.get('TD_CONSOLE', 'E:/1_software/TD/bin/td_commands_prompt.exe'))
+    parser.add_argument('--profile', choices=['all','base','text','transition','scale','color','scope'], default='all')
     args = parser.parse_args()
-    out = ROOT / 'build/td'
+    out = ROOT / ('build/td' if args.profile=='all' else 'build/td_'+args.profile)
     out.mkdir(parents=True, exist_ok=True)
     files = sorted(list((ROOT/'rtl').rglob('*.v')) + list((ROOT/'vendor').rglob('*.v')))
     names = set()
@@ -22,10 +23,15 @@ def main():
         if f.name in names: raise ValueError('Duplicate staged filename: '+f.name)
         names.add(f.name)
         shutil.copyfile(f, out/f.name)
+    features=['TEXT','TRANSITION','SCALE','COLOR','SCOPE']
+    (out/'feature_config.vh').write_text('\n'.join(
+        f'`define FEATURE_{name} {int(args.profile=="all" or args.profile==name.lower())}' for name in features)+'\n')
     # The encrypted controller uses this header to derive refresh intervals.
     # Keep vendor copy unchanged and explicitly select the actual 40MHz clock.
     header = out/'global_def.v'
-    header.write_text(header.read_text().replace('1000000000/125000000', '1000000000/40000000'))
+    original=header.read_text()
+    assert original.count('1000000000/125000000')==1, 'Refresh clock definition changed'
+    header.write_text(original.replace('1000000000/125000000', '1000000000/40000000'))
     project = ET.Element('Project', Version='3', Minor='2', Path=out.as_posix())
     ET.SubElement(project, 'Name').text = 'media_player'
     hw = ET.SubElement(project, 'HardWare')

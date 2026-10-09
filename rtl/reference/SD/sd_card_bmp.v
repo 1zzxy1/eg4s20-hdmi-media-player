@@ -1,6 +1,7 @@
 
 module sd_card_bmp #(
     parameter integer CLK_FREQ_HZ       = 100_000_000,
+    parameter ENABLE_SCALE = 1,
     parameter [31:0]  SCAN_START_SECTOR = 32'd0,
     parameter [31:0]  SCAN_MAX_SECTOR   = 32'd131071,
     parameter [2:0]   SCAN_TARGET_COUNT = 3'd4
@@ -22,6 +23,7 @@ module sd_card_bmp #(
 
     output                      write_req,
     input                       write_req_ack,
+    input                       write_ready,
     output                      write_en,
     output [31:0]               write_data,
     output                      SD_nCS,
@@ -42,6 +44,10 @@ wire             bmp_data_wr_en;
 wire [23:0]      bmp_data;
 wire             sd_init_done;
 wire             bmp_ready;
+wire             load_done;
+wire [3:0]       load_error;
+reg              load_fault;
+reg [2:0]        failed_loads;
 wire             scan_done;
 wire             scan_found_valid;
 wire [31:0]      scan_found_sector;
@@ -172,6 +178,8 @@ always @(posedge clk or posedge rst) begin
         display_commit_toggle <= 1'b0;
         display_ack_sync      <= 0;
         display_valid         <= 1'b0;
+        load_fault            <= 1'b0;
+        failed_loads          <= 0;
     end else begin
         wrfin_tgl_sync   <= {wrfin_tgl_sync[1:0], write_finish_toggle};
         display_ack_sync <= {display_ack_sync[1:0], display_ack_toggle};
@@ -179,6 +187,7 @@ always @(posedge clk or posedge rst) begin
         load_start_pulse <= 1'b0;
 
         if (!sd_init_done) begin
+            load_fault<=0;failed_loads<=0;
             scan_kicked           <= 1'b0;
             first_image_committed <= 1'b0;
             auto_play_en          <= 1'b0;
@@ -216,7 +225,7 @@ always @(posedge clk or posedge rst) begin
             end
 
             // 记住 bmp_read 已经把源图送完 FIFO，但还不能切显示，得等整帧写完
-            if (load_busy && bmp_ready)
+            if (load_busy && load_done)
                 source_done_seen <= 1'b1;
 
             // 只有真正收到 write_finish_toggle 脉冲，才提交新图并切换显示缓冲区
@@ -232,6 +241,7 @@ always @(posedge clk or posedge rst) begin
                 img_idx               <= load_idx;
                 display_valid         <= 1'b1;
                 first_image_committed <= 1'b1;
+                load_fault<=0;failed_loads<=0;
             end
             // Do not recycle the old front buffer until the next frame reader
             // has selected the new one. Payload stays stable until this ack.
@@ -279,7 +289,7 @@ always @(posedge clk or posedge rst) begin
                 end
 
                 // 首图自动加载到 buffer0
-                if (scan_done && !first_image_committed && bmp_ready && !load_busy && (img_found_count != 3'd0)) begin
+                if (scan_done && !first_image_committed && !load_fault && bmp_ready && !load_busy && (img_found_count != 3'd0)) begin
                     load_idx         <= 2'd0;
                     load_sector      <= img_sector0;
                     pending_buf_idx  <= 2'd0;
@@ -291,7 +301,7 @@ always @(posedge clk or posedge rst) begin
                     auto_cnt         <= 32'd0;
                 end
                 // 手动下一张优先：写到“非当前显示”的另一块 buffer
-                else if (scan_done && bmp_ready && display_valid && !load_busy && next_req_pending && (img_found_count != 3'd0)) begin
+                else if (scan_done && bmp_ready && !load_busy && next_req_pending && (img_found_count != 3'd0)) begin
                     load_idx         <= next_from_current;
                     load_sector      <= sector_lut(next_from_current);
                     pending_buf_idx  <= next_buf_lut(disp_buf_idx, display_valid);
@@ -314,11 +324,20 @@ always @(posedge clk or posedge rst) begin
                     auto_cnt         <= 32'd0;
                 end
             end
+            // A bad/truncated source must not lock out later key requests.
+            if(load_busy && load_error!=0 && !load_start_pulse) begin
+                load_busy<=0;load_fault<=1;source_done_seen<=0;memory_done_seen<=0;
+                // Try each known image at most once. Never commit a partial bank.
+                img_idx<=load_idx;
+                if(failed_loads+1<img_found_count) begin
+                    failed_loads<=failed_loads+1'b1;next_req_pending<=1;
+                end else next_req_pending<=0;
+            end
         end
     end
 end
 
-bmp_read bmp_read_m0(
+bmp_sector_player #(.ENABLE_SCALE(ENABLE_SCALE)) bmp_read_m0(
     .clk                    (clk),
     .rst                    (rst),
     .ready                  (bmp_ready),
@@ -337,8 +356,9 @@ bmp_read bmp_read_m0(
 
     .sd_init_done           (sd_init_done),
     .state_code             (state_code),
-    .bmp_width              (bmp_width),
-    .bmp_height             (bmp_height),
+    .load_done              (load_done),
+    .error_code             (load_error),
+    .pixel_ready            (write_ready),
     .write_req              (write_req),
     .write_req_ack          (write_req_ack),
     .sd_sec_read            (sd_sec_read),

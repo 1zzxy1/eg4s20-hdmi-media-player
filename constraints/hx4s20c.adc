@@ -5,6 +5,8 @@ set_pin_assignment {key_auto} {LOCATION = B1; IOSTANDARD = LVCMOS33; PULLTYPE = 
 set_pin_assignment {brightness_sw[0]} {LOCATION = C8; IOSTANDARD = LVCMOS33;}
 set_pin_assignment {brightness_sw[1]} {LOCATION = C7; IOSTANDARD = LVCMOS33;}
 set_pin_assignment {overlay_sw} {LOCATION = C6; IOSTANDARD = LVCMOS33;}
+set_pin_assignment {key_menu} {LOCATION = C1; IOSTANDARD = LVCMOS33; PULLTYPE = PULLUP;}
+set_pin_assignment {wave_sw} {LOCATION = C5; IOSTANDARD = LVCMOS33;}
 set_pin_assignment {led[0]} {LOCATION = A4; IOSTANDARD = LVCMOS33;}
 set_pin_assignment {led[1]} {LOCATION = A3; IOSTANDARD = LVCMOS33;}
 set_pin_assignment {led[2]} {LOCATION = C10; IOSTANDARD = LVCMOS33;}

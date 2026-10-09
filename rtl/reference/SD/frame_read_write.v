@@ -69,17 +69,25 @@ module frame_read_write
 	input[1:0]                       write_addr_index,           // select valid base address from write_addr_0 write_addr_1 write_addr_2 write_addr_3
 	input[ADDR_BITS - 1:0]           write_len,                  // data write module write request data length
 	input                            write_en,                   // data write module write request for one data
-	input[WRITE_DATA_BITS - 1:0]     write_data                 // write data
+	input[WRITE_DATA_BITS - 1:0]     write_data,
+    output wire                     write_ready
 
 );
-wire[9:0]                                       wrusedw;                    // 512-entry FIFO needs 10-bit occupancy
-wire[9:0]                                       rdusedw;
+wire[8:0]                                       wrusedw_raw, rdusedw_raw;
+wire[9:0]                                       wrusedw={1'b0,wrusedw_raw};
+wire[9:0]                                       rdusedw={1'b0,rdusedw_raw};
+wire write_afull;
+(* ASYNC_REG="TRUE" *) reg [2:0] write_release;
 
 wire 								 App_rd_busy;
 wire								 App_wr_busy;
 
 wire                                 read_fifo_aclr;             // fifo Asynchronous clear
 wire                                 write_fifo_aclr;            // fifo Asynchronous clear
+always @(posedge write_clk or posedge write_fifo_aclr)
+    if(write_fifo_aclr) write_release<=0;
+    else write_release<={write_release[1:0],1'b1};
+assign write_ready = !write_afull && write_release[2];
 
 wire O_wr_busy;
 wire O_rd_busy;
@@ -99,8 +107,9 @@ wfifo_32_32_512 write_buf
 	.di                       	(write_data               ),          // Input Data
 	.empty_flag                 (                         ),          // Read side Empty flag
 	.full_flag                  (                         ),          // Write side Full flag
+    .afull                      (write_afull),
 	.wrusedw                	(              	  		  ),          // Read Used Words
-	.rdusedw                	(rdusedw                  ),          // Write Used Words
+	.rdusedw                	(rdusedw_raw              ),          // Write Used Words
 	.dout                       (App_wr_din		          )
 );
 
@@ -151,7 +160,7 @@ rfifo_32_32_512 read_buf
 	.di                      	(Sdr_rd_dout                ),          // Input Data
 	.empty_flag					(                           ),          // Read side Empty flag
 	.full_flag					(                           ),          // Write side Full flag
-	.wrusedw                	(wrusedw         	  	  		 ),          // Read Used Words
+	.wrusedw                	(wrusedw_raw                  ),          // Read Used Words
 	.rdusedw                	(                  			 ),          // Write Used Words
 	.dout						(read_data                  )
 );

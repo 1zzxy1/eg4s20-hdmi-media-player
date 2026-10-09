@@ -1,22 +1,22 @@
-# HX4S20C 首次上板流程
+# HX4S20C 五项扩展版上板流程
 
 ## 先准备本地文件
 
 在 workspace 执行：
 
 ```sh
-python scripts/test.py
+python scripts/verify.py
 python scripts/build_td.py --stage bitstream
-python scripts/make_sd_image.py build/media/demo.img
+python scripts/make_sd_image.py build/media/demo-advanced.img
 ```
 
-或用四张自选正高度、非压缩 640×480 RGB888 BMP：
+或用四张自选正高度、非压缩 RGB888 BMP（宽1..1920，高1..1440）：
 
 ```sh
 python scripts/make_sd_image.py build/media/custom.img a.bmp b.bmp c.bmp d.bmp
 ```
 
-镜像是 17MiB、MBR + FAT16 文件系统，四张图片连续分配，便于当前扇区扫描器读取。程序只创建普通文件，不烧写磁盘。不支持通过任意编辑器删除/重拷图片后仍假定连续。
+镜像是65MiB、MBR + FAT16文件系统，四张图片连续分配。默认尺寸640×480、320×240、800×600、641×479；`--native`可生成四张固定640×480图。程序只创建普通文件，不烧写磁盘。不支持删除/重拷图片后仍假定连续。
 
 ## 板卡与操作
 
@@ -24,9 +24,10 @@ python scripts/make_sd_image.py build/media/custom.img a.bmp b.bmp c.bmp d.bmp
 2. 将镜像写入一张可擦除的 SDHC 卡。**执行写卡前必须确认具体物理磁盘和现有数据可以清空**；本任务尚未执行此步骤。
 3. 先用 TD Programmer 把 `build/td/media_player.bit` 下载到 FPGA 做易失性调试。当前未执行任何下载，也未验证 PC 已识别实际板卡。
 4. KEY1（A2）复位，KEY2（B2）下一张，KEY3（B1）开启/关闭自动轮播。启动默认手动模式，自动加载首图。
-5. SW1/2 组成亮度模式：00 原图、01 +32、10 +64、11 −32；SW3 打开状态条。拨码的实际高低方向以板卡测量为准。
-6. LED1 SDRAM 初始化完成；LED2 已提交首帧；LED3 HDMI 视频锁定；LED4 HDMI AXIS ready 违约粘滞标志。输出按低有效设计，需核对实际 LED 极性。
-7. 屏幕应按四图切换，状态条绿色代表已显示、橙色代表等待；扬声器应输出 1kHz 测试音，采样率 48kHz。
+5. SW1/2组成亮度模式：00原图、01 +32、10 +64、11 −32；SW3打开时间戳、参数面板和滚动字幕；SW4打开音频波形/峰值。实际高低方向以板卡测量为准。
+6. KEY4（C1）短按后松开：对比度100%→50%→150%→200%循环；长按至少1秒后松开：FADE/WIPE切换。参数于下一帧生效。
+7. LED1 SDRAM初始化完成；LED2已提交首帧；LED3 HDMI视频锁定；LED4 HDMI AXIS ready违约粘滞标志。输出按低有效设计，需核对实际LED极性。
+8. 屏幕应按四图切换，混合尺寸图拉伸为640×480；淡出至全黑后换图，再淡入，或用显影模式。扬声器应输出1kHz测试音，采样率48kHz；波形来自同一份PCM。
 
 ## 固化与竞赛验收
 
@@ -38,7 +39,7 @@ python scripts/make_sd_image.py build/media/custom.img a.bmp b.bmp c.bmp d.bmp
 | 手动与自动切图 | 已集成帧提交握手 | 快速按键、长按、加载中切换、无撕裂视频 |
 | HDMI 48kHz 音频 | PCM/ACR 仿真通过 | 接收端声音与采样率、连续播放 |
 | 上电自运行 | RTL 有复位/自动首图流程 | 固化后断 USB 数据连接，冷启动至少十次 |
-| 亮度及信息叠加 | 模块仿真通过 | 操作四档、无颜色回绕、状态条同步 |
+| 五项扩展 | 模块、黄金像素和组合链路仿真通过 | 字幕、转场、混合尺寸、四档亮度/对比度、波形逐项演示 |
 | 稳定性 | 待验收 | 至少 60 分钟轮播、无欠载/闪屏/丢音 |
 
 先定位 LED 状态和 TD 实际报告，再决定是否修改频率/约束。不要通过禁用检查或扩大 false path 掩盖故障。内存有效带宽及 TF/HDMI 外部电气时序仍是重点验证对象。
