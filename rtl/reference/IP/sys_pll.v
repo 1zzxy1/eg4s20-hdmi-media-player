@@ -92,7 +92,7 @@ module sys_pll (
     .daddr(6'b000000),
     .do({open, open, open, open, open, open, open, open}),
     .fbclk(clk0_out),
-    .clkc({open, open, clk2_out, clk1_buf, clk0_buf}) 
+    .clkc({open, open, clk2_out, clk1_buf, clk0_buf})
   );
 
 endmodule

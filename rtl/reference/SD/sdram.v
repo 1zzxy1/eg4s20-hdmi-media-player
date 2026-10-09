@@ -106,4 +106,4 @@ assign SDR_CKE=1'b1;
 		);
 //`endif
 
-endmodule 
+endmodule

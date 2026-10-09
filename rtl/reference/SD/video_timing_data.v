@@ -84,4 +84,4 @@ color_bar color_bar_m0(
 	.rgb_g(),
 	.rgb_b()
 );
-endmodule 
+endmodule

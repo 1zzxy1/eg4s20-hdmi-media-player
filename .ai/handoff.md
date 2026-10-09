@@ -2,6 +2,7 @@
 
 - 已创建 `1zzxy1/eg4s20-hdmi-media-player`，必须保持 private。首次 API 同步提交 `df573c9`，原初始化提交保留于本地 `local-bootstrap` 分支。
 - 首版顶层、PLL lock/分域复位、48kHz PCM/ACR、亮度/状态条、TF/BMP/双缓冲/HDMI 完成集成。参考修改和来源见 manifest、Git diff 及 `docs/validation.md`。
+- 本地功能提交 `b449c0c`；后续静态检查修订保留于 Git 历史。API 同步可能生成等价 tree 的不同 commit，须按实时 HEAD/远程核对。
 - 6 个 Icarus 测试全部通过；TD 6.2 完成综合/布局布线/位流，setup +1.471ns、hold +0.011ns。LUT 4167、REG 3415、BRAM9K 18、PLL 2、DSP 0。
 - 40MHz SDRAM / 50MHz TF 替代不满足时序的 125MHz / 100MHz；SDRAM 刷新周期定义在构建 staging 中跟随更新，vendor 原件不改。
 - `build/media/demo.img` 含四张连续 BMP 的 FAT16 分区，MBR/BPB/文件簇链已检查；没有写入实体 TF 卡。
