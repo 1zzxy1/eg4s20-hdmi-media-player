@@ -30,7 +30,8 @@ def main():
         'ip/vendor/course/hdmi1.4b_transmitter_core/hdmi_1_4b_transmitter_core_wrapper.enc.v',
         'ip/vendor/course/hdmi_phy_warpper.v','ip/vendor/course/lane_lvds_10_1.v','test/tb_hdmi_vendor.sv']
     game_names=['src/game/game_video.v','src/game/game_scene_text.v','src/game/game_hud_decimal.v',
-        'src/game/game_reward_fx.v','src/game/game_menu_video.v','test/tb_hdmi_game_pipeline.sv']
+        'src/game/game_reward_fx.v','src/game/game_menu_video.v',
+        'src/game/game_alignment_pattern.v','test/tb_hdmi_game_pipeline.sv']
     media_names=['src/audio/sd_pcm_player.v','src/audio/audio_sector_bridge.v',
         'src/storage/sd_sector_arbiter.v','test/tb_hdmi_sd_audio.sv']
     lib=Path('E:/1_software/TD/sim_release/eg4')
@@ -121,6 +122,10 @@ def main():
         '-gGAMEPLAY=1','-do','run -all; quit -f'],label='pipeline_hud')
     assert 'PASS HDMI game pipeline: calibration=0 gameplay=1' in log,'No positive gameplay HUD receipt'
     log=run('vsim.exe',['-c','-onfinish','exit','work.tb_hdmi_game_pipeline','-gDIRECT='+str(direct),
+        '-gGAMEPLAY=1','-gALIGN_ENABLE=1','-gALIGN_OFFSET=128',
+        '-do','run -all; quit -f'],label='pipeline_aligned')
+    assert 'PASS HDMI game pipeline: calibration=0 gameplay=1' in log,'No aligned game HDMI receipt'
+    log=run('vsim.exe',['-c','-onfinish','exit','work.tb_hdmi_game_pipeline','-gDIRECT='+str(direct),
         '-gINJECT_SHIFT=1','-do','run -all; quit -f'],label='pipeline_negative')
     assert 'pipeline pixel mismatch calibration=0 x=0 y=0' in log,'Pixel shift negative control was not detected at the left edge'
     assert 'PASS HDMI game pipeline:' not in log,'Negative control unexpectedly passed'
@@ -129,7 +134,7 @@ def main():
     if direct:
         check_direct_sync(run)
     (out/'result.json').write_text(json.dumps({'backend':backend,'hdmi':'pass','game_pipeline':'pass',
-        'calibration_edges':'pass','gameplay_hud':'pass','pixel_shift_negative':'detected',
+        'calibration_edges':'pass','gameplay_hud':'pass','manual_alignment_128':'pass','pixel_shift_negative':'detected',
         'sync_shift_negative':'detected' if direct else 'not applicable: regenerated sync',
         'island_sync_negative':'detected' if direct else 'not applicable: protected core',
         'audio_data_islands':audio_results,

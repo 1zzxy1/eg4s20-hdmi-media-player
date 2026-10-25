@@ -5,6 +5,7 @@ module tb_hdmi_game_pipeline;
     parameter CALIBRATION=0, INJECT_SHIFT=0, INJECT_HS_SHIFT=0;
     parameter DIRECT=1, GAMEPLAY=0, INJECT_ISLAND_SYNC=0;
     parameter STABILITY=1;
+    parameter ALIGN_OFFSET=0, ALIGN_ENABLE=0;
     reg clk=0,rst=1;
     always #20 clk=~clk;
     wire hs,vs,de,req,th,tv,td,dh,dv,ddelay,read_en;
@@ -39,7 +40,8 @@ module tb_hdmi_game_pipeline;
     end
     wire gh,gv,gd,fh,fv,fd,mh,mv,md;
     wire [23:0] grgb,frgb,mrgb;
-    game_video game(.clk(clk),.rst(rst),.hs(hs),.vs(vs),.de(de),
+    game_video #(.ALIGNMENT(ALIGN_ENABLE)) game(.clk(clk),.rst(rst),.hs(hs),.vs(vs),.de(de),
+        .alignment_offset(10'(ALIGN_OFFSET)),.alignment_active(1'b0),
         .media_rgb(coordinate(x,sy)),.media_valid(1'b1),.debug_mode(!GAMEPLAY),
         .media_fullscreen(1'b1),.osd_enable(1'b0),.view_narrow(!STABILITY),
         .palette_mode(1'b0),.assets_loaded(1'b1),.state(3'd2),
@@ -124,6 +126,7 @@ module tb_hdmi_game_pipeline;
         reg [55:0] glyph;
         integer col,row;
         begin
+            if(ALIGN_ENABLE&&GAMEPLAY)xx=(xx+ALIGN_OFFSET)%640;
             golden=coordinate(xx,yy);
             if(GAMEPLAY)begin
                 golden=24'h6b8cff;letters="MARIO     COIN    WORLD   TIME  ";

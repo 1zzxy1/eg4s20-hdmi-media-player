@@ -17,16 +17,21 @@ module media_player_top(
     wire left_press,right_press,jump_press,jump_short,jump_long,back_press,sound_toggle;
     wire [2:0] game_state;
     wire [3:0] frame_switches;
-    wire menu_active=1'b0,debug_mode=1'b0,media_fullscreen=1'b0,osd_enable=1'b0;
+    wire alignment_active,alignment_block;
+    wire [9:0] alignment_offset;
+    game_display_alignment u_alignment(.clk(pix_clk),.rst(rst_pix),.frame_tick(frame_tick),
+        .keys_n(keys_n),.switches(switches),.active(alignment_active),
+        .block_controls(alignment_block),.offset(alignment_offset));
+    wire menu_active=alignment_block,debug_mode=1'b0,media_fullscreen=1'b0,osd_enable=1'b0;
     wire view_narrow=1'b0,palette_mode=1'b0,reset_game=1'b0,scores_request=1'b0;
-    wire profile_request=jump_press&&game_state==0;
+    wire profile_request=jump_press&&game_state==0&&!alignment_block;
     wire audio_enabled=!frame_switches[0];
     wire test_tone=game_state==0&&frame_switches[1];
     wire audition=1'b0;
     wire [4:0] audition_id=5'd0;
     wire [1:0] master_volume=2'd3,bgm_volume=2'd2,sfx_volume=2'd3;
     game_inputs u_in(.clk(pix_clk),.rst(rst_pix),.frame_tick(frame_tick),
-        .keys_n(keys_n),.switches(switches),
+        .keys_n(alignment_block?4'hf:keys_n),.switches(switches),
         .gameplay_active(game_state==2||game_state==6||game_state==7),.debug_mode(1'b0),
         .held_left(held_left),.held_right(held_right),.jump_hold(jump_hold),.held_run(held_run),
         .held_down(held_down),.left_press(left_press),.right_press(right_press),
@@ -135,10 +140,10 @@ module media_player_top(
            .rst(rst_pix||reset_game),
            .frame_tick(frame_tick),
            .assets_loaded(assets_loaded),
-           .held_left(held_left),
-           .held_right(held_right),
-           .jump_press(jump_press&&game_state!=0),
-           .jump_hold(jump_hold),
+           .held_left(held_left&&!alignment_block),
+           .held_right(held_right&&!alignment_block),
+           .jump_press(jump_press&&game_state!=0&&!alignment_block),
+           .jump_hold(jump_hold&&!alignment_block),
            .back_press(back_press&&!menu_active&&(game_state==1||game_state==5)),
            .held_run(held_run),
            .held_down(held_down),
@@ -146,7 +151,7 @@ module media_player_top(
            .map_addr(map_addr),.map_we(map_we),.map_wdata(map_wdata),
            .debug_mode(menu_active),
            .profile_request(profile_request),.scores_request(scores_request),
-           .quick_start(jump_long&&game_state==1),
+           .quick_start(jump_long&&game_state==1&&!alignment_block),
            .view_narrow(view_narrow),
            .state(game_state),
            .player_x(player_x),
@@ -232,7 +237,8 @@ module media_player_top(
        assign flash_hold_n=1'b1;
     wire game_hs,game_vs,game_de;
        wire [23:0] game_rgb;
-    game_video u_game(.clk(pix_clk),
+    game_video #(.ALIGNMENT(1)) u_game(.clk(pix_clk),
+           .alignment_offset(alignment_offset),.alignment_active(alignment_active),
            .death_active(death_active),
            .effects_paused(menu_active),.reward_valid(reward_valid),.reward_kind(reward_kind),
            .reward_x(reward_x),.reward_y(reward_y),

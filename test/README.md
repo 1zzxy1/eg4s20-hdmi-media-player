@@ -1,5 +1,15 @@
 # 软件验证
 
+## 当前：手动横向校准
+
+用户换屏确认其他屏正常，目标改为针对自有屏人工补偿。`python script/test_alignment.py` 使用实际 `game_video`、同步 map/texture 延迟和接收端循环移位模型。无补偿／接收端右移 128 的负例在像素比较中失败；补偿和接收端偏移同为 0、1、128、639 时逐行比较游戏与校准图，每例 604160 像素，共 2416640 像素通过（校准值文字因数值不同而排除）。另测粗细调、环绕、长按、切换时按键隔离与拨码毛刺。模型只复现照片中的循环移位现象，不能证明真实显示器根因。
+
+`python script/test_hdmi_vendor.py` 追加 `pipeline_aligned`：正式渲染补偿 128 后，经加密原厂 HDMI 核解码，对照独立 HUD 黄金检查全部像素和同步。原有音调、非对称立体声、原 V4 镜像 BGM＋四路音效、串行引脚解码和故意错一拍负例也全部通过。回执 `build/hdmi_vendor_sim/result.json` 含 `manual_alignment_128=pass`。另单独重跑 `tb_game_inputs`、`tb_game_boot`、`tb_game_world`、`tb_game_video` 均通过；没有宣称完整游戏测试集全部重跑。
+
+原生 TD 构建、`check_project.py`、`check_deployment.py` 通过。板测采用正式游戏的 SW3 校准图，按 [板上操作](../doc/board-demo.md) 调节，尚待用户确认这块屏上的最终值及游戏／BGM。
+
+## 历史探针记录（A/B/C 已实屏失败）
+
 最新实板反馈为 A/B 均按 `8 9 0…7` 环绕。当前候选入口 `python script/test_video_svga.py`，输出 `build/video_svga_sim/`：实际功能 PLL 产生 40／200MHz，经正式 PHY 引脚恢复 TMDS，核对独立 Python 黄金画面、800×600 完整帧、HS128／后肩88／行1056／帧628、KEY4 与存储闲置；损坏蓝通道的负例必须失败。PLL 启动同样需要仿真专用 reset 脉冲，不是实板冷启动证明。构建与部署参数为 `--video-svga`。
 
 原始实屏故障没有可自动复现的板级捕获接口，不能称此数字回归锁住了根因。`script/test_video_board.ps1` 按 diagnosing-bugs 的 HITL 模板适配 Windows，记录实际人工观察、照片与候选哈希；旧 A/B 的已给定反馈导入后均返回 FAIL。它不是照片自动识别或 FPGA 回读。最终验收仍需新 C 位流在用户显示器上显示正确。

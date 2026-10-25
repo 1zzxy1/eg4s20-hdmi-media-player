@@ -1,7 +1,10 @@
 `include "game_assets.vh"
 // One background and one foreground texel per output pixel; two-cycle raster path.
-module game_video(
+module game_video #(
+    parameter ALIGNMENT=0
+)(
     input wire clk,rst,hs,vs,de,input wire [23:0] media_rgb,
+    input wire [9:0] alignment_offset,input wire alignment_active,
     input wire media_valid,debug_mode,media_fullscreen,osd_enable,view_narrow,palette_mode,assets_loaded,
     input wire [2:0] state,input wire [11:0] player_x,camera_x,enemy0_x,enemy1_x,
     input wire powerup_active,input wire [11:0] powerup_x,input wire [8:0] powerup_y,
@@ -33,7 +36,10 @@ module game_video(
     reg [7:0] scale_x;
     reg [2:0] scale_fraction;
     reg hs0,vs0,de0;
-    wire [9:0] request_px=de_d?scan_x:10'd0;
+    wire [9:0] raster_x=de_d?scan_x:10'd0;
+    wire [10:0] aligned_sum={1'b0,raster_x}+{1'b0,alignment_offset};
+    wire [9:0] request_px=ALIGNMENT?
+        (aligned_sum>=640?aligned_sum-11'd640:aligned_sum[9:0]):raster_x;
     // floor(x*256/640), using a 2/5 phase accumulator, with no divider.
     // Both logical view widths fill all 640 output columns.
     wire [9:0] request_lx=view_narrow?{2'b0,scale_x}:request_px>>1;
@@ -89,7 +95,7 @@ module game_video(
         else begin
             vs_d<=vs;de_d<=de;
             if(frame_tick) scan_y<=0;else if(de_d&&!de) scan_y<=scan_y+1'b1;
-            scan_x<=de?request_px+1'b1:10'd0;
+            scan_x<=de?raster_x+1'b1:10'd0;
             if(!de)begin scale_x<=0;scale_fraction<=0;end
             else if(scale_fraction>=3)begin scale_fraction<=scale_fraction-3'd3;scale_x<=scale_x+1'b1;end
             else scale_fraction<=scale_fraction+3'd2;
@@ -422,12 +428,20 @@ module game_video(
     wire ink=text_area&&glyph_col<5&&glyph[4-glyph_col];
     reg hs1,vs1,de1,inside1,sprite1,tile1,ink1,panel1,debug1,loaded1,palette1,player1,fire1,star1,grow1;
     reg [23:0] media0,media1;reg [8:0] ly1;
+    wire [23:0] alignment_rgb;
+    reg [23:0] alignment_rgb1;
+    generate if(ALIGNMENT)begin:alignment_pattern
+        game_alignment_pattern pattern(.x(px),.y(y),.offset(alignment_offset),.rgb(alignment_rgb));
+    end else begin:no_alignment
+        assign alignment_rgb=24'd0;
+    end endgenerate
     always @(posedge clk or posedge rst) begin
         if(rst) begin
-            hs1<=0;vs1<=0;de1<=0;inside1<=0;sprite1<=0;tile1<=0;ink1<=0;panel1<=0;
+            hs1<=0;vs1<=0;de1<=0;inside1<=0;sprite1<=0;tile1<=0;ink1<=0;panel1<=0;alignment_rgb1<=0;
             debug1<=0;media0<=0;media1<=0;loaded1<=0;palette1<=0;ly1<=0;player1<=0;fire1<=0;star1<=0;grow1<=0;
         end else begin
             media0<=media_rgb;
+            alignment_rgb1<=alignment_rgb;
             hs1<=hs0;vs1<=vs0;de1<=de0;inside1<=inside_view;sprite1<=sprite_on;tile1<=tile!=0||decor_on;
             ink1<=ink;panel1<=panel;loaded1<=assets_loaded;palette1<=palette_mode;ly1<=ly;player1<=player_sprite;fire1<=fire_mario;
             star1<=player_star===1'b1;grow1<=transform_frames!=0&&transform_frames[1];
@@ -448,6 +462,7 @@ module game_video(
         if(panel1) color=(loaded1&&sprite1&&sprite_index!=0)?palette(sprite_index):24'h182940;
         if(debug1) color=media1;
         if(ink1) color=24'hffffff;
+        if(ALIGNMENT&&alignment_active)color=alignment_rgb1;
     end
     always @(posedge clk or posedge rst)
         if(rst) begin hs_o<=0;vs_o<=0;de_o<=0;rgb_o<=0;end

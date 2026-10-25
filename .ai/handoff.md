@@ -1,5 +1,15 @@
 # 当前交接
 
+## 2026-10-25 手动适配自有显示器：已构建，待实屏校准
+
+- 新证据／授权：用户确认同一板卡接其他显示器正常，只有自己的屏横向环绕；明确要求软件人工对齐。覆盖下方旧的“停止／只测官方／不改代码”边界。本轮不再追问品牌，不再交付 A/B/C。
+- 正式游戏恢复交付：新增 `src/game/game_display_alignment.v`（SW3、按键帧级防抖、帧边界提交、进出模式等待松键）和 `game_alignment_pattern.v`（0～9、四色边框、数值和说明）。`game_video.v` 在同步地图读取之前以 `(raster_x+offset)%640` 映射源坐标，光栅计数和 HDMI 时序保持原样；顶层使用固定 320×240 两倍视口，启用 ALIGNMENT。校准时暂停游戏／特效并隔离游戏按键，BGM 继续原实现。
+- 操作：默认 offset=128，SW3 上拨进入；KEY3 左移／KEY1 右移，1px 微调，按住 KEY2 改为 16px；长按连续；KEY4 归零。范围 0～639。松键、SW3 下拨回游戏并保留值；掉电恢复 128，不持久化 SD／Flash。需用户调到左红右绿贴边，记录 SOURCE OFFSET；若最终值不同，下一步固化该默认值。0 用于正常屏。
+- 自动验证：`python script/test_alignment.py` 退出0，无补偿+右移128负例确实在像素比较失败；0/1/128/639 四组真实游戏／校准像素共2416640通过，控制器进出／粗细调／长按／环绕／毛刺通过。模型来自照片现象，不等于真实接收屏仿真。另重跑 inputs、boot、world、video 四个原有 bench 通过；未重跑完整 game 集。
+- `python script/test_hdmi_vendor.py` 退出0：补偿128后的游戏经真实原厂 HDMI 核、完整HUD像素／同步通过；原有音调、非对称立体声、原 V4 镜像五声部 PCM／串行引脚音频全部通过；错一拍负例被捕获。回执 build/hdmi_vendor_sim/result.json 的 manual_alignment_128=pass。不把软件结果写成已实屏修好。
+- 构建／配套：`build_td_gui.py`、`check_project.py`、`check_deployment.py` 全部通过。73 RTL、83 staging、29 IO。位流 `prj/media_player_Runs/phy_1/media_player.bit`，2026-10-25 15:47:02，633129字节，SHA256 `4046a723964bd328ad99d0e059d90ffbb68a2446ffdc922797fa5b294dea83e5`。setup +3.955ns，hold +0.012ns。Slice7430/9800=75.82%，LUT14017，FF5486，BRAM52，DSP3；比校准前增加295Slice/573LUT/58FF，无额外BRAM/DSP。
+- 原 SD 镜像 hash仍37553923c0d73f69646ad592af4fe4b0d8b39c067435cc62a6ba29f87f03f637，6BMP/24音轨/LBA15097配套通过。不写实体卡、不操作板卡、不推送。更新 README、板测和测试说明；按用户要求本地 Git 保存修复。旧检查点 d84d8db、旧游戏归档和A/B/C仍保留。下一步仅需用户下载本位流，在自有屏上校准并复验游戏／BGM。
+
 ## 2026-10-25 继续：改用现成官方 A 位流进行实板对照
 
 - 用户重新要求继续分析，随后明确选择现成 `31_hdmi_tx_display_A` 位流对照，不改代码、不重建。该指令覆盖下方“停止排障”的旧状态。A/B/C 失败和 BGM 正常的结论保持。
