@@ -14,7 +14,9 @@ python script/check_deployment.py
 
 三个命令成功后，用户用 TD Programmer／BitWriter 下载 `prj/media_player_Runs/phy_1/media_player.bit`。无需手动 RUN；不要修改 `build/staging/gui/`。构建前关闭旧 TD 工程，关闭时不要保存过期的源文件清单。构建报告和输入／位流配套回执位于 `prj/verification.json`。
 
-2026-10-25 16:59:02 恢复版位流为 636621 字节，SHA256 `777df2d066b3dd2074eb470b16a7a08278685583aa7654752fb5360c3f7c2b89`。实际 hold ECO 修复并重新生成位流后，setup +2.435ns／hold +0.024ns；LUT 18368／19600（93.71%）、BRAM 62／64、DSP 7／29。资源较紧，后续扩展需重新评估。
+如果手动 RUN 出现 `game_display_alignment`、`media_gallery` 或 `game_alignment_pattern is a black box`，先关闭工程且不要保存旧清单，再执行上述三个命令，完成后重新打开 `prj/media_player.al`。旧 GUI 缓存可能把新增文件登记覆盖掉；构建脚本会补全持久登记、清理排除缓存，并在工程被占用时拒绝改写。已有工程的脚本 RUN 直接使用保存的 RTL 清单，避免临时 `add_files` 掩盖 GUI 缺项。
+
+2026-10-25 17:44:40 修复 GUI 源文件清单后重新生成的恢复版位流为 636621 字节，SHA256 `da6dd4c3f4a104a08e7d3c2e715690395991f562a8b9d367ed4ad7b6210175f6`。实际 hold ECO 修复并重新生成位流后，setup +2.435ns／hold +0.024ns；RTL 与此前恢复版相同，LUT 18368／19600（93.71%）、BRAM 62／64、DSP 7／29。资源较紧，后续扩展需重新评估。
 
 继续使用原 V4 SD 卡，素材和音频布局没有变化，无需重写卡。当前没有操作实体卡、下载 FPGA 或固化配置 Flash。详细下载流程见 [下载与固化](doc/bringup.md)。
 

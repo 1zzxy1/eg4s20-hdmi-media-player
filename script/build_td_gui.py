@@ -89,23 +89,30 @@ def main():
     stage=ROOT/('build/staging/video_svga' if args.video_svga else 'build/staging/video_diagnostic' if args.video_diagnostic else 'build/staging/negative' if args.negative_control else 'build/staging/gui')
     top='video_svga_top' if args.video_svga else 'video_diagnostic_top' if args.video_diagnostic else 'media_player_top'
     sdc='video_svga.sdc' if args.video_svga else 'video_diagnostic.sdc' if args.video_diagnostic else 'media_player.sdc'
+    if (out/'.lock.f').exists():
+        raise SystemExit('TD project is open or locked: '+str(out)+
+                         '. Close it without saving a stale source list, then retry.')
     out.mkdir(parents=True,exist_ok=True)
     files=stage_sources(stage)
     (out/'verification.json').write_text(json.dumps({'passed':False,'state':'running'}))
     project=out/'media_player.al'
-    if project.exists():
+    existing_project=project.exists()
+    if existing_project:
         sync_project_sources(project,stage,files)
     # create_project initializes the device implicitly; reopening an existing
     # project must do so explicitly before launching native project runs.
     commands=['import_device eagle_s20.db -package EG4S20BG256']
-    if not project.exists():
+    if not existing_project:
         commands.append('create_project media_player {'+out.as_posix()+'} -family EG4 -device EG4S20BG256')
     commands+=['open_project {'+project.as_posix()+'}', 'top_module '+top,
                'add_include_dir {'+stage.as_posix()+'}',
                'set_param place effort high -run phy_1',
                'set_param place fix_hold high -run phy_1',
                'set_param route hold_fix_iteration 10 -run phy_1']
-    commands += ['add_files {'+(stage/f.name).as_posix()+'}' for f in files]
+    # Existing projects must compile from the saved source list, just like GUI
+    # RUN. Console-only add_files could otherwise hide missing GUI dependencies.
+    if not existing_project:
+        commands += ['add_files {'+(stage/f.name).as_posix()+'}' for f in files]
     if not args.negative_control:
         commands += ['add_files {'+(stage/n).as_posix()+'}' for n in ['hx4s20c.adc',sdc]]
     # These are disposable generated runs, not source files. Remove their old
@@ -121,6 +128,9 @@ def main():
     driver=(out/'driver.log').read_text(errors='replace')
     if (run.returncode or 'GUI_RUN_FINISHED' not in driver) and not args.negative_control:
         raise SystemExit('Native project flow failed: '+str(out/'driver.log'))
+    # Clear TD's cached unused-module flags for the next manual GUI RUN and
+    # reassert the persisted list after TD has finished writing the project.
+    sync_project_sources(project,stage,files)
     synlog=(syn/'run.log').read_text(errors='replace');phylog=(phy/'run.log').read_text(errors='replace')
     assert (phy/'run.log').stat().st_mtime>=started,'Stale physical run log'
     settings=(syn/'settings.cfg').read_text()

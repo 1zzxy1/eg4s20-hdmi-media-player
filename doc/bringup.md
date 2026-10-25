@@ -62,6 +62,8 @@ python script/check_deployment.py --image build/media/game-audio-v5-candidate.im
 
 ## 构建故障定位
 
+`HDL-8007 ... is a black box`／`HDL-7144 instantiate unknown module` 若指向 `game_display_alignment`、`media_gallery` 或 `game_alignment_pattern`，先运行 `python script/check_project.py` 检查新增文件是否登记。2026-10-25 发现旧 TD GUI 保存的清单覆盖了新模块登记：关闭工程且不要保存，重新运行 `python script/build_td_gui.py`，再检查工程和配套并重新打开 `.al`。不要只复制单个 `.v` 到 staging，目录里有文件不代表工程已参与综合。脚本检测工程锁，并直接从持久 RTL 清单执行已有工程的原生 RUN。
+
 `BIT-8123` 表示未约束 IO，检查实际 RUN 的 ADCList/SDCList 是否包含正式约束。当前 `build_td_gui.py` 已实际验证约束传递及 29 个 IO 位置；不要打开历史空约束工程或允许未约束 IO 来绕过。
 
 恢复图库后再次实例化 SDRAM，可能出现原有 PHY-7002 ECO 位置及 PHY-5079 单负载转发时钟提示。脚本只接受已核对的精确实例警告，其他 critical 仍须检查；以新构建的资源、setup／hold 和配套回执为准，不扩大 false path。

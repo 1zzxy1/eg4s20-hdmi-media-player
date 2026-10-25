@@ -1,5 +1,7 @@
 # 当前上下文
 
+最新为 2026-10-25 17:44 GUI RUN 黑盒修复：旧 TD GUI 保存的 `.al` 漏掉三个实际实例化模块，工程检查与综合日志均复现。用户已关闭工程且未保存；已补全 74 个 RTL 登记。已有工程的脚本 RUN 只从持久清单读取 RTL，关闭 TD 后再次同步，并在检测到工程锁时拒绝改写。此次仅改构建／测试／文档，src、ip、约束、SD 素材未变。完整 native RUN 会话71842退出0，真实 hold ECO 后 setup+2.435ns／hold+0.024ns；最新 bit 为2026-10-25 17:44:40、636621字节，SHA256 da6dd4c3f4a104a08e7d3c2e715690395991f562a8b9d367ed4ad7b6210175f6。check_project、check_deployment、15项deployment测试通过；未重跑未改RTL完整回归，恢复版仍待板测。重新打开 prj/media_player.al，原 V4 卡不需重写，不烧板／不写卡／不推送；Git保存按用户既有授权。下段16:59位流为历史记录，最新产物以上述17:44和handoff顶部为准。
+
 用户已实板确认人工补偿版 d4a501e 的画面、BGM 和游戏正常，当前授权恢复此前删除的媒体实验室功能。图库四槽／BMP 手动切图与轮播／字幕／实际 PCM 波形／显示和音频设置已接回，同一 BMP 解码器优先完成游戏纹理再服务图库，音频仲裁优先；任意横向偏移使用 SDRAM 16 词对齐和寄存器前缀。默认补偿128、固定640×480，保留正常 HDMI／PCM 链。首屏 SW1 素材、SW2 字幕波形、SW1＋SW3 显示、SW4 音频，SW3 单独校准；KEY4 进昵称，松开再长按一秒开始，之后 Debug 禁用。最终原生构建和hold ECO通过：bit为2026-10-25 16:59:02、636621字节，SHA256 777df2d066b3dd2074eb470b16a7a08278685583aa7654752fb5360c3f7c2b89；setup+2.435ns/hold+0.024ns，LUT18368/19600、BRAM62/64、DSP7，资源较紧。check_project、check_deployment、14项deployment负例、18帧5529600像素黄金、全部同步字形差分、offset128实验室与最终原厂HDMI音视频专项均通过，回执hash一致。详见handoff顶部；本地Git保存，恢复版仍待板测。正常旧版完整备份在 build/rollback-evidence/board-confirmed-20261025-aligned/，bit SHA256 4046a723964bd328ad99d0e059d90ffbb68a2446ffdc922797fa5b294dea83e5。原 V4 卡 hash37553923c0d73f69646ad592af4fe4b0d8b39c067435cc62a6ba29f87f03f637 未变、不需重写。不烧板、不写实体卡、不推送。下方为历史记录，不能覆盖本段。
 
 ## 历史实屏结论：A/B/C 都失败（新任务见顶部）

@@ -34,7 +34,7 @@ python script/check_deployment.py
 python test/test_deployment.py
 ```
 
-check_deployment 检查真实 staging、当前位流／构建回执以及原 V4 六图／24 轨镜像；不会刷新 staging 掩盖过期，也不访问设备。test_deployment 包含过期位流、GUI 登记／AutoExcluded、素材及音频目录损坏等 14 项负例。以实际命令成功退出为准，构建失败时旧 bit 不能交付。
+check_deployment 检查真实 staging、当前位流／构建回执以及原 V4 六图／24 轨镜像；不会刷新 staging 掩盖过期，也不访问设备。test_deployment 包含过期位流、GUI 登记／AutoExcluded、打开工程时禁止改写、素材及音频目录损坏等 15 项测试。登记测试包含实际报错的三个新增模块，并检查相对路径、综合开关和重复同步幂等性。已有工程的原生 RUN 直接读取持久 RTL 清单，不靠临时 `add_files` 补齐。以实际命令成功退出为准，构建失败时旧 bit 不能交付。
 
 `python script/verify.py` 是 14 组完整回归入口。只有 run.json 全部通过并绑定当前输入快照，才能声称完整回归；分项 results.json 只是进度。
 

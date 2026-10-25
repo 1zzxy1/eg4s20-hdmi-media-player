@@ -1,5 +1,13 @@
 # 当前交接
 
+## 2026-10-25 17:44 GUI RUN 黑盒修复：保存清单缺项，已重新构建
+
+- 用户手动 RUN 报 game_display_alignment、media_gallery、game_alignment_pattern 黑盒。`python script/check_project.py` 实际退出 1，缺 9 个登记（含 6 个历史诊断源）；17:37 的 syn/run.log 复现三条 HDL-8007。16:59 driver.log 三模块已被读取，而 17:37 保存的 `.al` 缺项，符合旧 GUI 清单覆盖更新登记。用户通过异步回复明确已关闭工程且未保存。
+- 使用 diagnosing-bugs；未改 src／ip／约束／素材。复用 sync_project_sources 补回 74 个持久登记并清除 AutoExcluded。build_td_gui.py 对已有工程取消临时 RTL add_files，实际 native RUN 必须从保存的 `.al` 读取；TD 关闭后再次同步清单。新增 `.lock.f` 占用检查，避免边开 GUI 边改写。部署测试覆盖三个实际缺失模块的路径／综合开关／幂等性及锁定时禁止改写，共 15 项通过。
+- 原生构建会话71842实际退出0，日志确认三模块 analyze 且无黑盒；完整综合／布局布线／bitgen、真实 fix_hold -eco 后重生 bit 均通过。setup +2.435ns，hold -0.011ns→+0.024ns。新 bit：prj/media_player_Runs/phy_1/media_player.bit，2026-10-25 17:44:40、636621字节，SHA256 da6dd4c3f4a104a08e7d3c2e715690395991f562a8b9d367ed4ad7b6210175f6；verification passed=true。
+- 最后 check_project（29 IO／74 RTL）、check_deployment（84 staging／6 BMP／24轨原 V4）均退出0，diff检查通过。此次只改构建和说明，没有重跑未改 RTL 的音视频／游戏全套；恢复版仍待用户实板验收。17:37失败工程、日志和旧回执备份在 build/rollback-evidence/before-gui-source-repair-20261025/；用户失败 RUN 已移除了原 phy bit，未能在该目录备份旧恢复 bit，不能称其存在。正常旧版完整备份仍在 board-confirmed-20261025-aligned/。
+- README、prj/README、bringup、competition-status、test/README、.ai 已同步。后续重新打开 prj/media_player.al；推荐关闭 GUI 后脚本构建，再下载最新 bit。SD 不需重写，未操作实体设备／未推送。按用户既有 Git 保存授权本地提交修复。
+
 ## 2026-10-25 恢复媒体实验室：构建与专项通过，待实板验收
 
 - 用户已确认 d4a501e 人工补偿版实屏正常，要求补回停用功能并多次 continue。当前工作是恢复，不再等待旧官方探针或对齐反馈。不操作实体 SD／板卡、不推送；用户曾授权 Git 保存进度，最终验证后本地提交。

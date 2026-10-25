@@ -8,16 +8,33 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'script'))
 from check_deployment import check_build, check_media
 from make_sd_image import make_image
 from pack_game_audio import make_pack
-from build_td_gui import sync_project_sources
+from build_td_gui import main as gui_main, sync_project_sources
 
 
 class GuiProjectTests(unittest.TestCase):
+    def test_open_gui_project_is_not_rewritten(self):
+        with tempfile.TemporaryDirectory(prefix='td-project-') as directory:
+            root=Path(directory)
+            project_dir=root/'prj'
+            project_dir.mkdir()
+            project=project_dir/'media_player.al'
+            project.write_bytes(b'open GUI project')
+            (project_dir/'.lock.f').touch()
+            with mock.patch('build_td_gui.ROOT',root), \
+                 mock.patch.object(sys,'argv',['build_td_gui.py']), \
+                 mock.patch('build_td_gui.stage_sources') as stage:
+                with self.assertRaisesRegex(SystemExit,'Close it without saving'):
+                    gui_main()
+                stage.assert_not_called()
+            self.assertEqual(project.read_bytes(),b'open GUI project')
+
     def test_reactivated_ip_clears_stale_auto_exclusion(self):
         with tempfile.TemporaryDirectory(prefix='td-project-') as directory:
             project=Path(directory)/'media_player.al'
@@ -39,7 +56,7 @@ class GuiProjectTests(unittest.TestCase):
             sync_project_sources(project,Path(directory)/'stage',[Path('core.v')])
             self.assertEqual(once,project.read_bytes())
 
-    def test_missing_hdmi_sources_persist_without_losing_settings(self):
+    def test_missing_gui_dependencies_persist_without_losing_settings(self):
         with tempfile.TemporaryDirectory(prefix='td-project-') as directory:
             project=Path(directory)/'media_player.al'
             project.write_text('<Project><Source_Files><Verilog>'
@@ -47,14 +64,23 @@ class GuiProjectTests(unittest.TestCase):
                 '</FileInfo></File></Verilog></Source_Files>'
                 '<HardWare><Device>EG4S20BG256</Device></HardWare>'
                 '<Runs><Run Name="phy_1"/></Runs></Project>',encoding='utf-8')
-            files=[Path(n) for n in ('old.v','game_hdmi_tx.v','game_hdmi_channel.v','game_hdmi_terc.v')]
+            files=[Path(n) for n in ('old.v','game_hdmi_tx.v','game_hdmi_channel.v','game_hdmi_terc.v',
+                                    'game_display_alignment.v','media_gallery.v','game_alignment_pattern.v')]
             sync_project_sources(project,Path(directory)/'stage',files)
             once=project.read_bytes()
             sync_project_sources(project,Path(directory)/'stage',files)
             self.assertEqual(once,project.read_bytes())
             import xml.etree.ElementTree as ET
             saved=ET.parse(project)
-            self.assertEqual(len(saved.findall('Source_Files/Verilog/File')),4)
+            nodes=saved.findall('Source_Files/Verilog/File')
+            self.assertEqual(len(nodes),len(files))
+            by_name={Path(node.get('Path')).name:node for node in nodes}
+            for source in files[1:]:
+                node=by_name[source.name]
+                self.assertEqual((project.parent/node.get('Path')).resolve(),
+                                 (Path(directory)/'stage'/source.name).resolve())
+                self.assertEqual(node.find('FileInfo/Attr[@Name="UsedInSyn"]').get('Val'),'true')
+                self.assertEqual(node.find('FileInfo/Attr[@Name="UsedInP&R"]').get('Val'),'true')
             self.assertEqual(saved.findtext('HardWare/Device'),'EG4S20BG256')
             self.assertEqual(saved.find('Runs/Run').attrib['Name'],'phy_1')
 

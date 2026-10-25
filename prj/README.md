@@ -1,8 +1,10 @@
 # TD 工程入口
 
-本轮仅画面诊断：使用 `python script/build_td_gui.py --video-diagnostic`，输出在 `build/video_diagnostic/media_player_Runs/phy_1/media_player.bit`；配套检查为 `python script/check_deployment.py --video-diagnostic`。独立顶层video_diagnostic_top，SW1切A原厂HDMI／B纯DVI，KEY4重置视频，没有游戏、SD访问与声音。下方路径仍为保留的游戏基线。
+当前正式目标是恢复媒体实验室的游戏版，使用下方默认命令。历史 `--video-diagnostic`／`--video-svga` 仅用于独立画面诊断，不是当前交付目标。
 
 日常在 workspace 根目录运行 `python script/build_td_gui.py`，生成并实际执行原生 TD RUN；随后运行 `python script/check_deployment.py`。无需在 TD GUI 中手动 RUN，GUI 仅用于下载。构建前关闭旧工程，关闭时不要保存旧文件清单。
+
+手动 RUN 报新增模块 `is a black box` 时，关闭工程且不要保存，运行 `python script/build_td_gui.py` 和 `python script/check_project.py`，完成后重新打开本目录的 `media_player.al`。脚本补全保存在 `.al` 中的全部 RTL 登记，并清理旧的排除缓存；已有工程的原生 RUN 不再临时添加 RTL 来掩盖缺项。检测到 `.lock.f` 时会先停止，防止打开的旧 GUI 再覆盖清单。
 
 - 打开：`media_player.al`；顶层 `media_player_top`，器件 EG4S20BG256。
 - 下载：`media_player_Runs/phy_1/media_player.bit`。
