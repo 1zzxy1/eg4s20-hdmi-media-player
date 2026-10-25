@@ -1,6 +1,23 @@
 # EG4S20 游戏稳定性候选
 
-当前目标只有三项：BGM 正常、游戏可玩、画面完整。2026-10-25 版暂时停用素材浏览、轮播、波形、调色及显示设置，保留游戏、昵称／头像、排行、TF 音乐与音效；尚未经过本轮实板验收，不能称为已经恢复正常。
+## 当前：仅测试画面错位（2026-10-25）
+
+用户已实测确认BGM无杂音，右侧画面绕到左侧仍存在。游戏源码／素材已保存为本地Git检查点 `d84d8db`。现在使用独立纯视频诊断位流，暂时关闭游戏、TF读取、音频与排行写入；下面的游戏操作保留为基线说明。
+
+诊断位流：`build/video_diagnostic/media_player_Runs/phy_1/media_player.bit`，14:07:07，629641字节，SHA256 `b0becade21261481568ac2ff81feb4c1e17c6c3121c1be0a1df7e451305cdde4`。SW1下拨为 `A VENDOR HDMI`，上拨为 `B PURE DVI`，KEY4重置视频；同一HDMI-A接口、同一640×480／25MHz时序。没有声音是诊断版的预期行为，不需要SD卡。看0～9编号是否从左到右连续、左红右绿边框是否在屏幕两端。具体步骤和结果判读见 [板上测试](doc/board-demo.md)。
+
+```powershell
+python script/test_video_diagnostic.py
+python script/build_td_gui.py --video-diagnostic
+python script/check_project.py --video-diagnostic
+python script/check_deployment.py --video-diagnostic
+```
+
+诊断工程／staging／回执独立，不覆盖 `prj/` 下的游戏位流。Slice1444／9800=14.73%，BRAM10／64，DSP0，原生setup +3.273ns／hold +0.011ns。像素、同步和串行数字检查通过不等于实屏已恢复。
+
+## 游戏基线（下文操作只适用于游戏位流）
+
+游戏基线保留游戏、昵称／头像、排行、TF音乐与音效，暂停素材浏览、轮播、波形、调色及显示设置。用户最新实测确认BGM无杂音，但右侧画面仍绕到左边，因此本轮先使用上面的纯视频诊断。
 
 Git 本地和远端 main 仅有马里奥开发前的源码，没有“第一次 BGM 正常”的游戏提交。已核对本机历史记录，未找到可完整恢复的中间源码；因此保留游戏，依据旧版接法恢复原厂 HDMI 核、上电 EDID 触发及实际 DDC 引脚连接，同时精简当前顶层。资源高、HDMI 差异均未证实为实板故障根因。
 

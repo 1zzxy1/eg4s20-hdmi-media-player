@@ -78,9 +78,14 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--td',default=os.environ.get('TD_CONSOLE','E:/1_software/TD/bin/td_commands_prompt.exe'))
     parser.add_argument('--negative-control',action='store_true')
+    parser.add_argument('--video-diagnostic',action='store_true',help='Build isolated video-only HDMI/DVI board diagnostic')
     args=parser.parse_args()
-    out=ROOT/('build/td_gui_no_constraints' if args.negative_control else 'prj')
-    stage=ROOT/('build/staging/negative' if args.negative_control else 'build/staging/gui')
+    if args.video_diagnostic and args.negative_control:
+        parser.error('Diagnostic and missing-constraint negative control are separate builds')
+    out=ROOT/('build/video_diagnostic' if args.video_diagnostic else 'build/td_gui_no_constraints' if args.negative_control else 'prj')
+    stage=ROOT/('build/staging/video_diagnostic' if args.video_diagnostic else 'build/staging/negative' if args.negative_control else 'build/staging/gui')
+    top='video_diagnostic_top' if args.video_diagnostic else 'media_player_top'
+    sdc='video_diagnostic.sdc' if args.video_diagnostic else 'media_player.sdc'
     out.mkdir(parents=True,exist_ok=True)
     files=stage_sources(stage)
     (out/'verification.json').write_text(json.dumps({'passed':False,'state':'running'}))
@@ -92,14 +97,14 @@ def main():
     commands=['import_device eagle_s20.db -package EG4S20BG256']
     if not project.exists():
         commands.append('create_project media_player {'+out.as_posix()+'} -family EG4 -device EG4S20BG256')
-    commands+=['open_project {'+project.as_posix()+'}', 'top_module media_player_top',
+    commands+=['open_project {'+project.as_posix()+'}', 'top_module '+top,
                'add_include_dir {'+stage.as_posix()+'}',
                'set_param place effort high -run phy_1',
                'set_param place fix_hold high -run phy_1',
                'set_param route hold_fix_iteration 10 -run phy_1']
     commands += ['add_files {'+(stage/f.name).as_posix()+'}' for f in files]
     if not args.negative_control:
-        commands += ['add_files {'+(stage/n).as_posix()+'}' for n in ['hx4s20c.adc','media_player.sdc']]
+        commands += ['add_files {'+(stage/n).as_posix()+'}' for n in ['hx4s20c.adc',sdc]]
     # These are disposable generated runs, not source files. Remove their old
     # result markers so a repeat cannot reuse a failed/stale GUI database.
     commands+=['reset_runs syn_1 -f','launch_runs {syn_1 phy_1}',
@@ -124,7 +129,7 @@ def main():
         (out/'verification.json').write_text(json.dumps({'passed':True,'negative_control':True,'expected_error':'BIT-8123'},indent=2))
         print('PASS negative control: real GUI RUN reproduces BIT-8123 without constraints')
         return
-    assert 'hx4s20c.adc' in settings and 'media_player.sdc' in settings,'GUI did not propagate constraints'
+    assert 'hx4s20c.adc' in settings and sdc in settings,'GUI did not propagate constraints'
     assert 'read_adc' in synlog and 'read_sdc' in synlog,'GUI synthesis did not read constraints'
     errors=[l for l in (synlog+phylog).splitlines() if ' ERROR:' in l]
     assert not errors,errors
@@ -143,7 +148,7 @@ def main():
     # TD's IO report is a placement check in addition to mere settings inclusion.
     for port,loc in pins:
         assert re.search(r'^\s*'+re.escape(port)+r'\s+(?:INPUT|OUTPUT|INOUT)\s+'+re.escape(loc)+r'\s',area,re.M),('IO location mismatch',port,loc)
-    receipt={'passed':True,'project':str(project),'bitstream':str(phy/'media_player.bit'),
+    receipt={'passed':True,'project':str(project),'top':top,'bitstream':str(phy/'media_player.bit'),
              'sha256':hashlib.sha256((phy/'media_player.bit').read_bytes()).hexdigest(),
              'pins_checked':len(pins),'timing_ns':wns,'native_gui_flow':True,
              'post_route_hold_repair':hold_repair,'reviewed_warnings':known,
@@ -159,7 +164,7 @@ if __name__=='__main__':
     except (Exception, SystemExit) as error:
         # A failed flow must not leave a misleading "running" receipt or allow
         # an old bitstream to be mistaken for an accepted current build.
-        receipt_dir=ROOT/('build/td_gui_no_constraints' if '--negative-control' in sys.argv else 'prj')
+        receipt_dir=ROOT/('build/video_diagnostic' if '--video-diagnostic' in sys.argv else 'build/td_gui_no_constraints' if '--negative-control' in sys.argv else 'prj')
         if receipt_dir.exists():
             (receipt_dir/'verification.json').write_text(json.dumps({
                 'passed':False,'state':'failed','error':str(error)},indent=2))

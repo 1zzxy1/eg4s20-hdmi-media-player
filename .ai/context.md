@@ -1,39 +1,31 @@
 # 当前上下文
 
-最新实板反馈：BGM已无杂音，画面右端绕左仍在。用户要求暂关其他功能，只做画面诊断，并明确要求本地Git保存进度（不推送）。以下01:06候选描述保留为基线；当前游戏bit13:50已重建，见handoff，旧verification不匹配，诊断必须使用独立输出目录。
+当前目标只排查画面横向环绕。用户已实板确认BGM无杂音，仍有右侧内容绕到左侧；要求暂关其他功能并Git保存。游戏检查点已本地提交d84d8db，包含之前目录迁移和全部游戏素材；不推送、不烧板、不写卡。本轮未开子代理。
 
-## 目标与授权
+## 当前诊断交付
 
-用户仅求BGM正常、游戏可玩、画面不环绕，要求查看Git／旧版；允许精简回退。2026-10-25完成精简稳定性候选，尚无本轮实板结果。不要恢复扩展功能、宣称根因已查明或声画已修好。本轮不写实体SD、不下载／固化、不提交／推送，不开子代理，保留已有目录迁移及dirty改动。
+独立顶层src/diagnostic/video_diagnostic_top.v，video_diagnostic_pattern独立640×480计数器，video_diagnostic把同一图像送A原厂HDMI与B纯DVI。SW1下A／上B，KEY4复位；改变模式自动2.62ms复位，固定25MHz／800×525／约59.524Hz。编号0～9每栏64px，左红右绿上蓝下黄8px边框，LEFT000／RIGHT639标签。B绕开AXIS FIFO、音频岛和InfoFrame；仍共用原video_pll、厂商PHY和HDMI-A。没有横向补偿。
 
-## 历史证据
+不实例化游戏、SD、PCM、排行、SDRAM，无声音；SD和Flash片选保持高，卡可拔。LED2=路径就绪、LED3=DVI、LED4=A背压锁存，LED1仅备用输入观测，不表示SD。
 
-本地／远端main均2a81835805b99f4ca82a81f0f6f23b105da56359（10月9日，马里奥前），无中间游戏提交／stash／不可达commit。不能整仓回退丢游戏，也没有“首次音乐正常版”的完整配套源码。
+构建／核对均追加--video-diagnostic：
+python script/test_video_diagnostic.py
+python script/build_td_gui.py --video-diagnostic
+python script/check_project.py --video-diagnostic
+python script/check_deployment.py --video-diagnostic
 
-10月19日首次游戏实测“能玩”已同时报左侧显示异常；10月24日15:46首次明确有声，17:05报杂音、17:19确认独立测试音也杂音，烧16:50版。其间封包／PCM／采样节拍／PLL无修改，不能编造PCM算法回归。旧正常媒体为原厂HDMI、startup脉冲读EDID、DDC接实际引脚；10月24日失败原厂候选trigger=0、DDC悬空，未完整复原。差异存在但未证实根因。33.jpg显示左右校准边框一起环绕，没有新增−128像素补偿。
+产物build/video_diagnostic/media_player_Runs/phy_1/media_player.bit，2026-10-25 14:07:07，629641字节，SHA256 b0becade21261481568ac2ff81feb4c1e17c6c3121c1be0a1df7e451305cdde4。输出与staging独立，没有覆盖prj游戏位流。原生RUN会话53653退出0，setup +3.273ns／hold +0.011ns，29IO／68RTL／77staging检查通过；Slice1444=14.73%、LUT2446、FF1494、BRAM10／64、DSP0、PLL1、GCLK1。
 
-## 当前实现
+数字测试：A两整帧614400像素、B三整帧921600像素，与Python独立黄金一致；各1679978组串行字、HS96／后肩48／行800／帧480，RGB损坏负例检出。hdmi.png／dvi.png是仿真参考，不是实拍。controls覆盖实际功能PLL启动、A→B→A、KEY4复位、SD／Flash闲置，78954退出0；模型需要额外初始reset脉冲模拟上电，不能扩大为实板冷启证据。统一runner及输入哈希回执在build/video_diagnostic_sim/result.json。14项deployment测试通过，未重完整游戏／14组回归。
 
-- 顶层直接固定时序→游戏→原厂HDMI，READ_EDID=1／实际DDC；PLL／640×480、800×525、25MHz、48kHz音源与采样算法保持。无SDRAM、图片DMA、四槽／转场、advanced_video、波形／菜单实验室实例；源码／单元测试保留。
-- game_asset_loader调用bmp_sector_player ENABLE_SCALE=0，V4首图LBA2337、原尺寸640×480，直接交付纹理；完整帧和16像素签名校验后发布，失败50ms重试，成功停止读图，再使能SD音频。初版误把2048分区起点当BMP，被本轮专项抓到并修正，不是此前实板卡住的原因结论。
-- KEY3左、KEY2跳、KEY1右、SW4跑火；KEY4首屏进昵称，松开后长按一秒快捷开始，等待图集时请求锁存。SW1全局静音、SW2仅首屏独立1kHz测试音、SW3无功能。声音默认开，主／BGM／SFX=3／2／3，320×240逻辑视口两倍显示。
-- LED1=SD初始化，LED2=图集已发布，LED3=图集失败|音频错误|Flash错误，LED4=原厂视频背压异常锁存，非音频overflow。
-- 保留地图／纹理bank优化、世界／奖励／死亡／入城、昵称／头像／排行、一路BGM＋四SFX。未实现地下房、烟花、原作逐帧物理，不是FC模拟器。
+## 下一步
 
-## 当前产物与验证
+用户只需SRAM下载诊断bit，SW全下看A，SW1上看B，各拍完整屏幕，记录最左编号、右绿框是否绕左。若暂时无信号，KEY4按下松开再等几秒。两者均正常→对比游戏输入链；A错B正常→HDMI／AXIS／接收模式；均错→共用时钟／物理输出／显示器时序识别。组合只能指导排查，不能直接定根因。无实板A／B结果前不恢复功能或宣称修复。
 
-正式入口prj/media_player.al，修改src／ip／prj/constraints后build_td_gui.py→check_deployment.py；不改build/staging/gui。关闭旧TD时不要保存旧清单，脚本登记65份RTL并清AutoExcluded。
+## 保留游戏基线
 
-本次原生TD RUN会话93631退出0，无需hold ECO：setup +4.053ns／hold +0.011ns／29 IO。位流prj/media_player_Runs/phy_1/media_player.bit，2026-10-25 01:06:38，633129字节，SHA256 612b575c4a54820af56f06b9569038156895cf4b1d5229b713248c36715a5d37。配套检查退出0、73个staging文件一致。Slice7135／9800=72.81%、LUT13444、FF5428、BRAM52／64=81.25%、DSP3、PLL2、GCLK2。相对上一版Slice94.99%下降，BRAM41升52，不能说全部下降。
+d84d8db是完整可恢复源码进度。prj游戏bit现为13:50:50的c18d8f986f71935e388156a9bcbe432ce3101a015beafecdbc52f2c6e4ad1467，已备份build/rollback-evidence/game-20261025-135050；旧verification绑定01:06的612b575c，不能给重建bit背书。01:06配套归档build/rollback-evidence/stable-20261025-010638含src／ip／素材／staging／bit／报告。新增诊断源使旧游戏receipt源集过期，恢复开发游戏时重新脚本构建。
 
-游戏会话12228实际退出0、29个bench全过：真实V4截断／坏签名／恢复、全部21760纹理双读口、lobby、公开输入通关1451步／15跳／x3264、20帧场景等。HDMI会话6102退出0，默认vendor，36项输入哈希复核一致；测试音／立体声／V4各2099981组串行字、4031输入／4030恢复／精确尾1，19个IEC状态块；实际WAV黄金、187BMP／68音频扇区、启动304次等待、起播后无额外欠载。精简tail坐标／HUD各1228800像素，DDC无应答仍视频正常、1181下降沿；RGB负例检出。没有会应答的EDID显示器模型，不是电气或板测。
+基线：原厂HDMI READ_EDID=1／实际DDC，固定640×480；V4首BMP LBA2337直接加载纹理，完整帧／签名成功后启音频，失败重试；KEY3左KEY2跳KEY1右SW4跑火，KEY4昵称后长按一秒，SW1静音SW2首屏测试音。BGM＋四SFX、昵称／头像／排行保留；素材轮播等扩展暂未启用。Slice72.81%、BRAM52／64，29游戏bench与原厂HDMI专项已过，详细历史见handoff。
 
-14项deployment测试及check_project通过，本轮未重完整14组，不沿用旧全套成功快照。综合sync0_reg的clk未驱动警告已按最终routed.v复核：8个输入寄存器移入PAD，ipclk均接u_flash/clk，即video PLL→GCLK后的像素时钟；旧sync0_reg实例已不存在，不是8个按键时钟被绑零。动态RAM初始化警告对应在用前覆盖的buffer；PHY仅保留旧器件slot／pre-route hold支持提示，实际最终setup／hold为正。
-
-原V4镜像68157440字节、SHA256 37553923c0d73f69646ad592af4fe4b0d8b39c067435cc62a6ba29f87f03f637，BMP LBA2337、音频PAK LBA15097。10月24日原卡已写入／回读／弹出，本轮不改，无需重写。
-
-## 交接
-
-修改前备份build/rollback-evidence/before-stable-20261025，旧bit cf15d352…65ad。本轮成功候选的配套归档见handoff。此前f3954e20等本轮早期bit误用LBA2048，不能交付。
-
-README／board-demo／architecture／competition-status／bringup／test说明与.ai按当前候选同步。赛题规则／资料索引保留，但当前位流暂不具备基础手动切图／轮播及全部五扩展，不是完整赛题交付。用户自行烧板，先LED2／进游戏，再听BGM／SW2测试音和检查右端环绕；实际三项故障及排行掉电／固化冷启／长稳仍待实测。
+V4镜像68157440字节，SHA256 37553923c0d73f69646ad592af4fe4b0d8b39c067435cc62a6ba29f87f03f637，原卡无需重写。旧Git2a818358是马里奥前，只能作为接法参考，不能拿来整仓回退游戏。当前还不满足完整赛题功能，参赛信息仍见competition-status，眼前只解决实屏。

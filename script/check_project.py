@@ -3,11 +3,16 @@ from pathlib import Path
 import hashlib
 import json
 import re
+import argparse
 
 ROOT = Path(__file__).resolve().parents[1]
 
 def main():
-    header=(ROOT/'src/media_player_top.v').read_text().split(');',1)[0].split('(',1)[1]
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--video-diagnostic',action='store_true')
+    args=parser.parse_args()
+    top='src/diagnostic/video_diagnostic_top.v' if args.video_diagnostic else 'src/media_player_top.v'
+    header=(ROOT/top).read_text().split(');',1)[0].split('(',1)[1]
     ports=[]
     width=None
     for part in header.split(','):
@@ -38,7 +43,7 @@ def main():
                 assert any(hashlib.sha256(value).hexdigest()==row['source_sha256'] for value in
                            [normalized,normalized.replace(b'\n',b'\r\n')]),row['destination']
     # A console add_files call must not hide an incomplete saved GUI project.
-    project=(ROOT/'prj/media_player.al').read_text(encoding='utf-8')
+    project=(ROOT/('build/video_diagnostic/media_player.al' if args.video_diagnostic else 'prj/media_player.al')).read_text(encoding='utf-8')
     registered={Path(p.replace('\\','/')).name for p in re.findall(r'<File Path="([^"]+)"',project)}
     required={p.name for directory in ('src','ip') for p in (ROOT/directory).rglob('*.v')}
     assert required<=registered,('RTL missing from saved TD project',sorted(required-registered))

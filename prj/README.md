@@ -1,5 +1,7 @@
 # TD 工程入口
 
+本轮仅画面诊断：使用 `python script/build_td_gui.py --video-diagnostic`，输出在 `build/video_diagnostic/media_player_Runs/phy_1/media_player.bit`；配套检查为 `python script/check_deployment.py --video-diagnostic`。独立顶层video_diagnostic_top，SW1切A原厂HDMI／B纯DVI，KEY4重置视频，没有游戏、SD访问与声音。下方路径仍为保留的游戏基线。
+
 日常在 workspace 根目录运行 `python script/build_td_gui.py`，生成并实际执行原生 TD RUN；随后运行 `python script/check_deployment.py`。无需在 TD GUI 中手动 RUN，GUI 仅用于下载。构建前关闭旧工程，关闭时不要保存旧文件清单。
 
 - 打开：`media_player.al`；顶层 `media_player_top`，器件 EG4S20BG256。

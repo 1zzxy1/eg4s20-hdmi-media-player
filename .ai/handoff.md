@@ -1,5 +1,18 @@
 # 当前交接
 
+## 2026-10-25 14:07 独立A／B画面诊断（当前交付）
+
+- 用户确认BGM已无杂音，右侧画面绕左仍存在，明确要求先关其他功能并Git保存。已本地提交游戏检查点d84d8db（包括此前未提交的目录迁移、全部游戏源码／素材／文档），未推送。BGM已好这一实板结论覆盖下方“无实测”的旧记录，不能宣称画面已好。
+- 新src/diagnostic三模块：独立800×525／640×480计数器，10个64px编号栏、8px四色边框、左右000／639标签和坐标色带；同一像素送A原厂HDMI适配器和B纯DVI编码。SW1下A／上B，模式变化触发65536像素时钟复位，KEY4可手动复位；仍同一25MHzPLL／厂商PHY／HDMI-A，无偏移补偿。音频样本／ACR不送，不实例化游戏／SD／PCM／排行／SDRAM，SD和Flash片选高。B绕过AXIS／InfoFrame／数据岛，不代表改变游戏音乐实现。
+- 独立顶层video_diagnostic_top；build_td_gui.py、check_project.py、check_deployment.py增加--video-diagnostic，输出build/video_diagnostic与build/staging/video_diagnostic；使用单独video_diagnostic.sdc，没有SD时钟。没有覆盖prj的游戏位流或修改游戏／音频／原HDMI适配器／PLL源码。新增模块会使旧默认游戏回执源集过期，下次恢复开发游戏应重新构建，不能复用旧receipt。
+- TD会话53653实际退出0，29IO／68RTL／77staging检查通过；setup +3.273ns／hold +0.011ns，无ECO。诊断bit：build/video_diagnostic/media_player_Runs/phy_1/media_player.bit，2026-10-25 14:07:07，629641字节，SHA256 b0becade21261481568ac2ff81feb4c1e17c6c3121c1be0a1df7e451305cdde4。Slice1444／9800=14.73%、LUT2446、FF1494、BRAM10／64、DSP0、PLL1、GCLK1。PHY只有旧器件slot／pre-route hold支持警告。
+- test_video_diagnostic.py：独立Python全帧黄金，ModelSim真实厂商HDMI／PHY，A恢复2整帧614400像素，B3整帧921600像素，各1679978串行字；检查HS96／后肩48／行800／帧480及RGB损坏负例。A、B捕获PNG与黄金逐字节一致，hdmi.png已目视。首轮编译修正了加密厂商源不能用-sv及需加载完整厂商模型库的问题，未改厂商源码。
+- 新tb_video_diagnostic_controls覆盖真实功能PLL启动、A→B→A、KEY4按住／释放、存储引脚始终闲置；会话78954退出0、正向PASS。功能PLL模型需显式200ns初始reset脉冲，bench强制该输入模拟上电，硬件PLL配置未改；首次无脉冲长等已停止并留日志，不冒称模型证明物理冷启。两类测试合入统一runner，最终回执以build/video_diagnostic_sim/result.json为准。
+- 14项deployment单元测试再次通过，诊断check_project／check_deployment通过。未重跑未修改的游戏完整回归／旧14组。此次无板测，等待用户A／B实屏照片；不要继续堆功能或推断根因。LED2=选中路径就绪、LED3=B DVI、LED4=A输入背压，LED1仅备用输入观测，不能沿用游戏LED含义。
+- 最终统一runner会话73807实际退出0，A／B正向、RGB负例、功能PLL／按键控制全部通过；result.json passed=true，19项当前工程输入及厂商模型哈希一致。诊断bit配套检查再次通过；原游戏源码git diff相对d84d8db为空，原bit仍c18d8f98。此次未操作实体设备。
+- 游戏bit仍c18d8f986f71935e388156a9bcbe432ce3101a015beafecdbc52f2c6e4ad1467，未覆盖；已备份game-20261025-135050，01:06完整配套仍在stable-20261025-010638。实际SD未访问，无需重写。文档及.ai已改为本轮诊断优先，基线游戏操作标为历史保留。
+- 下一步用户下载诊断路径，SW全下拍A，再SW1上拍B，记录0～9顺序、红／绿边框位置；必要时KEY4重锁。两者正常则接回游戏入口；仅A错集中HDMI／AXIS／接收模式；两者错查共用时钟／物理链路与显示器识别。这是排查方向，不是仅凭组合即可证明的根因。
+
 ## 2026-10-25 实板反馈与画面专项开始
 
 - 用户确认当前BGM已无杂音，右侧内容绕到左侧仍在；本轮只做显示诊断，暂时旁路其他功能。用户明确要求Git保存进度，取代此前“不提交”的本轮边界；只本地提交，不推送。

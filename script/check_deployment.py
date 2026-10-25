@@ -140,8 +140,23 @@ def main():
     parser.add_argument('--audio-directory', type=Path, default=ROOT / 'assets/audio',
                         help='Audio pack/manifest paired with the image (default: accepted original)')
     parser.add_argument('--json', action='store_true', help='Print a machine-readable result')
+    parser.add_argument('--video-diagnostic', action='store_true', help='Check isolated video-only build; no media required')
     args = parser.parse_args()
     try:
+        if args.video_diagnostic:
+            directory = ROOT / 'build/video_diagnostic'
+            receipt = json.loads((directory / 'verification.json').read_text(encoding='utf-8'))
+            require(receipt.get('top') == 'video_diagnostic_top', 'Receipt is not the video diagnostic')
+            build = check_build(receipt, directory / 'media_player_Runs/phy_1/media_player.bit',
+                                ROOT / 'build/staging/video_diagnostic', expected_staging())
+            if args.json:
+                print(json.dumps({'passed': True, 'build': build, 'media': None,
+                                  'scope': 'Video diagnostic files only; no device accessed'}, indent=2))
+            else:
+                print(f'PASS video diagnostic / current sources: {build["staged_files"]} staged files')
+                print(f'  BIT SHA256: {build["sha256"]}')
+                print('No TF card required. Physical display acceptance is separate.')
+            return 0
         require(args.image.suffix.lower() == '.img' and args.image.is_file(),
                 'Media input must be a regular .img file, not a device or drive')
         receipt = json.loads((ROOT / 'prj/verification.json').read_text(encoding='utf-8'))

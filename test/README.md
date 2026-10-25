@@ -1,5 +1,11 @@
 # 软件验证
 
+本轮纯视频诊断使用 `python script/test_video_diagnostic.py`，独立回执在build/video_diagnostic_sim/result.json。A原厂HDMI与B纯DVI的像素由独立Python图像黄金检查，包含编号、字体、完整边框和坐标色带；接收侧检查HS宽度／后肩／整行／整帧，正式PHY输出逐字对照；损坏AXIS RGB的负例必须检出。两路径共用640×480／25MHz，模拟检查不等于实屏正常。
+
+同一入口还运行tb_video_diagnostic_controls：实际功能PLL模型下检查A→B→A、KEY4按住／释放和存储引脚始终闲置。该模型用bench的200ns初始reset脉冲模拟上电，硬件原PLL配置不变；不将它当真实冷启验收。最终回执绑定19项工程输入及厂商模型哈希。本轮统一入口实际退出0，各项PASS；不替代旧14组或实板声画验证。
+
+诊断构建为 `python script/build_td_gui.py --video-diagnostic`；工程与部署检查都追加同一参数。输出／staging／回执均独立，不访问TF卡，不覆盖游戏位流。当前用户已确认游戏BGM无杂音，画面环绕仍在，等待A／B实屏对照。
+
 当前是2026-10-25精简游戏候选，未启用的媒体代码与测试保留。优先运行：
 
 ```powershell

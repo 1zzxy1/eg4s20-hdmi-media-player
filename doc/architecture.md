@@ -1,5 +1,13 @@
 # 工程架构
 
+## 当前显示诊断分支
+
+`src/diagnostic/video_diagnostic_top.v` 是独立顶层，由 `build_td_gui.py --video-diagnostic` 生成在build/video_diagnostic下，不替换游戏顶层。板上只保留原video_pll、同步复位、SW1／KEY4控制、测试图、两种编码路径和厂商PHY；SD／Flash片选始终高，无读写和声音。
+
+`video_diagnostic_pattern.v` 用独立800×525计数器直接产生640×480图像及同步，带十个64像素编号栏、四边8像素色框及左右坐标标签。`video_diagnostic.v` 将同一像素送往原厂HDMI适配器和纯DVI编码器；SW1选择，改变路径时重新复位视频和PHY。A走完整EDID／DDC、AXIS／原厂包，B只发有效视频和同步控制符，绕开音频岛／InfoFrame／AXIS。时钟及输出接口共同保留，可用实屏差异定位后续方向。
+
+该诊断不声称修复游戏错位。用户确认游戏基线BGM已正常，Git检查点d84d8db保存该进度；下文仍描述游戏基线架构。当前诊断资源Slice1444、LUT2446、FF1494、BRAM10、DSP0、PLL1、GCLK1。
+
 ## 当前精简稳定性候选
 
 `src/media_player_top.v` 仅连接游戏、图集加载、TF 音频、排行和原厂 HDMI。目标是减少依赖并恢复旧版 HDMI 集成方式；尚未确认实板杂音／环绕／加载等待的根因。
