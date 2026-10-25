@@ -1,0 +1,23 @@
+`ifndef GAME_LEVEL_DEFS_VH
+`define GAME_LEVEL_DEFS_VH
+`define CELL_AIR 8'd0
+`define CELL_GROUND 8'd1
+`define CELL_BRICK 8'd2
+`define CELL_Q_COIN 8'd3
+`define CELL_Q_POWER 8'd4
+`define CELL_USED 8'd5
+`define CELL_STONE 8'd6
+`define CELL_PIPE_TL 8'd7
+`define CELL_PIPE_TR 8'd8
+`define CELL_PIPE_BL 8'd9
+`define CELL_PIPE_BR 8'd10
+`define CELL_HIDDEN_1UP 8'd11
+`define CELL_BRICK_COIN 8'd12
+`define CELL_BRICK_STAR 8'd13
+`define CELL_BRICK_POWER 8'd14
+`define LEVEL_WIDTH 12'd3392
+`define LEVEL_FLAG_X 12'd3168
+`define LEVEL_CASTLE_X 12'd3232
+`define LEVEL_DOOR_X 12'd3264
+`define LEVEL_CAMERA_MAX 12'd3136
+`endif

@@ -1,57 +1,81 @@
-# EG4S20 HDMI 多媒体播放系统
+# EG4S20 游戏稳定性候选
 
-面向 HX4S20C（EG4S20BG256）的 2026 安路赛道赛题一工程。
+当前目标只有三项：BGM 正常、游戏可玩、画面完整。2026-10-25 版暂时停用素材浏览、轮播、波形、调色及显示设置，保留游戏、昵称／头像、排行、TF 音乐与音效；尚未经过本轮实板验收，不能称为已经恢复正常。
 
-五项进阶功能已集成，默认全部启用。工程采用 640×480@59.524Hz、RGB888、SDRAM 双缓冲架构。完成软件仿真和 TD 构建不等于实板验收；尚未烧录、固化或测试断电启动。
+Git 本地和远端 main 仅有马里奥开发前的源码，没有“第一次 BGM 正常”的游戏提交。已核对本机历史记录，未找到可完整恢复的中间源码；因此保留游戏，依据旧版接法恢复原厂 HDMI 核、上电 EDID 触发及实际 DDC 引脚连接，同时精简当前顶层。资源高、HDMI 差异均未证实为实板故障根因。
 
-- TF 卡 SPI 读取连续存储、正高度、24-bit 非压缩 BMP，尺寸 1..1920 × 1..1440；
-- BMP 像素写入片内 2M×32 SDRAM 帧缓存；
-- HDMI 输出视频和 48kHz 测试音；
-- 按键切换与自动轮播；
-- 进阶：时间戳/滚动字幕/半透明叠加、淡入淡出和显影、最近邻缩放、亮度/对比度与参数显示、PCM 波形/峰值。
+## 下载与操作
 
-## 目录
+- 工程：`prj/media_player.al`；正式顶层：`src/media_player_top.v`。
+- 位流：`prj/media_player_Runs/phy_1/media_player.bit`，2026-10-25 01:06:38，633129 字节。
+- 位流 SHA256：`612b575c4a54820af56f06b9569038156895cf4b1d5229b713248c36715a5d37`。
+- 继续使用原 V4 卡；本轮未改镜像、未写实体卡、未下载板卡或固化 Flash。
+- [板上操作](doc/board-demo.md) · [下载与固化](doc/bringup.md) · [架构](doc/architecture.md) · [赛题与进度](doc/competition-status.md) · [来源](doc/code-provenance.md)。
 
-- `rtl/`：当前工程 RTL 和可编辑的参考模块。
-- `vendor/course/`：课程资料中的原始参考 RTL 副本，保留原文件名；其中 `.enc.v` 需要 TD 解密环境。
-- `scripts/import_reference.py`：从上级资料库补充参考源码，不覆盖已有文件。
-- `reference_manifest.json`：参考文件来源和 SHA-256。
-- `constraints/`：HX4S20C 管脚及时序约束。
-- `sim/`：Icarus Verilog 自检测试平台。
-- `docs/validation.md`：资源、带宽、时序结果及剩余风险。
-- `docs/bringup.md`：测试卡准备、板卡操作与验收步骤。
-- `docs/advanced-validation.md`：本轮五项功能、仿真边界及资源矩阵。
-- `docs/code-provenance.md`：哪些是参考/加密 IP、哪些是本次自写和修改。
+上电先将 SW 全部下拨，等待 LED2 图集加载成功。按 KEY4 进入昵称，松开后再次长按 KEY4 一秒直接开始；短按逐字确认六字符和头像的流程也保留。进入游戏后松开 KEY1–3，再操作。
 
-## 目标器件
+| 控件 | 当前用途 |
+|---|---|
+| KEY3／KEY2／KEY1 | 游戏中左走／跳跃／右走 |
+| SW4 | 游戏中加速／火焰形态发射火球 |
+| KEY4 | 首屏进入昵称；昵称长按一秒开始；死亡或结算后确认 |
+| SW1 | 全局静音，上拨静音、下拨有声 |
+| SW2 | 仅首屏以独立 1kHz 测试音覆盖 BGM；下拨恢复 |
+| SW3 | 暂无功能 |
 
-- Family：`EG4`
-- Device：`EG4S20BG256`
-- 板卡：`HX4S20C`
-- 系统时钟：50MHz，来自 `R7`
-- 视频像素时钟：25MHz
-- HDMI 串行时钟：125MHz
-- SDRAM 用户时钟：40MHz，转发时钟相移 172.8°
-- TF 控制时钟：50MHz；初始化 SPI 约 100kHz，读取 SPI 12.5MHz
+声音默认开，主／BGM／SFX 音量固定 3／2／3。输出固定 640×480，25MHz、800×525，约 59.524Hz；游戏采用 320×240 逻辑视口两倍放大。显示器负责放大到面板尺寸，没有增加横向坐标补偿。
 
-## 当前状态
+## 构建与验证
 
-```sh
-python scripts/verify.py
-python scripts/build_td.py --stage bitstream
-python scripts/build_td_gui.py
-python scripts/make_sd_image.py build/media/demo-advanced.img
-python scripts/profile_matrix.py
+在 workspace 下执行：
+
+```powershell
+python script/test_game.py
+python script/test_hdmi_vendor.py
+python script/build_td_gui.py
+python script/check_deployment.py
 ```
 
-需要 Python 3、PATH 中的 `iverilog`/`vvp`、TD 6.2 以及 ModelSim。`test_vendor.py` 支持 `--modelsim`/`--td` 覆盖工具目录；HDMI 测试脚本当前使用本机目录。默认 TD console 路径可用 `--td` 或 `TD_CONSOLE` 覆盖。构建输出在 `build/td/`，主位流为 `media_player.bit`；图片镜像命令拒绝覆盖现有文件，也不直接操作物理磁盘。
+日常构建使用 `build_td_gui.py → check_deployment.py`，成功后由用户用 TD Programmer／BitWriter 下载，无需 GUI 手动 RUN。构建前关闭旧 TD 工程，关闭时不要保存旧内存源清单。脚本持久登记全部正式 RTL，更新 staging 并实际执行原生 RUN；不要编辑 `build/staging/gui/`。
 
-顶层为 `rtl/media_player_top.v`。KEY1 复位、KEY2 下一张、KEY3 开关自动轮播；KEY4 短按切对比度、长按切淡入淡出/显影。SW1/2 调亮度，SW3 开关文字层，SW4 开关波形，HDMI-A 输出音视频。
+需要 Python 3、Icarus Verilog、ModelSim、TD 6.2，TD 默认 `E:/1_software/TD`。完整软件验证入口仍为 `python script/verify.py`，包含旧媒体功能；本轮专项验证不等于完整 14 组已重跑。结果和边界见 [当前进度](doc/competition-status.md)。
 
-TD GUI现在打开 **`build/td_gui/media_player.al`**，Programmer下载 **`build/td_gui/media_player_Runs/phy_1/media_player.bit`**。`build_td_gui.py`使用TD原生工程管理生成独立GUI工程，并实际运行与GUI RUN相同的流程，检查约束传递、23个IO位置和时序。`build/td`保留批处理构建用途；不要在仍缓存旧工程的窗口继续RUN。逐项实物演示请照 [板卡演示清单](docs/board-demo.md) 操作。
+HDMI 专项默认原厂路径，`--direct` 可检查保留的直接核。包含真实 V4 PCM、独立音频解包、厂商串行器、游戏像素边界、故意错位负例及无响应 EDID 接收端下的 DDC 活动检查。数字验证不能代替实屏画面和试听。
 
-当前读取器是有界扇区扫描，不是 FAT 文件系统：从 LBA 2048 起，在前 64MiB 中搜索四张连续存储的 BMP。生成器默认创建混合尺寸四图 FAT16 镜像；`--native` 生成四张640×480图片供关闭缩放的配置使用。普通复制、删除后产生的碎片文件不保证支持。缩放为拉伸填满，不保持纵横比；没有双线性插值、FFT、两图交叉混合或真正的平移转场。
+## 当前数据路径
 
-`python scripts/verify.py` 执行引脚/来源检查、11个模块/链路测试、23个BMP场景、18帧独立黄金像素比对、原厂加密SDRAM控制器测试及原厂HDMI数字接口测试。证据在 `build/verification/`；任何步骤失败即终止。SDRAM阵列使用自建器件模型，HDMI未建完整音频接收器和模拟PHY；这些边界不会被标作“全部硬件已证明”。
+TF 首张 BMP → 原尺寸解码 → 双读口纹理缓存 → 游戏渲染 → 原厂 HDMI 核 → 厂商 PHY。图集成功后停止读图，再启动 TF 五声部 PCM；不再依赖 SDRAM 初始化、图片 DMA 或显示确认。
 
-源码和验证结论保存在 private GitHub 仓库；构建数据库、日志、卡镜像和位流留在本机。原始资料上级目录未纳入 Git。
+图集为 V4 固定布局 LBA2337 的 640×480、24-bit、正高度 BMP；完整帧和签名正确才发布，失败等待后重试。音频仍通过 LBA1 的目录定位。本版不提供任意图片浏览／通用 FAT 解析，其他五张预览 BMP 保留在卡中但不加载。
+
+当前 Slice7135／9800（72.81%），LUT13444、FF5428、BRAM52／64、DSP3、PLL2、GCLK2。相比上一版 Slice94.99% 明显下降；恢复原厂核使 BRAM 从41升至52，不是所有资源都下降。原生 setup +4.053ns／hold +0.011ns，29 IO 检查通过。
+
+## 目录与素材
+
+```text
+workspace/
+├─ src/        正式 RTL：control、game、storage、memory、video、audio、common
+├─ ip/         PLL、SD、SDRAM、厂商 HDMI／PHY 与参考 IP
+├─ prj/        TD 工程、正式 ADC／SDC、位流与构建回执
+├─ script/     构建、素材打包、验证
+├─ test/       自检 bench 与功能器件模型
+├─ assets/     游戏图集、音源、PCM 包及来源清单
+├─ doc/        操作、架构、赛题与历史说明
+├─ build/      可再生 staging、仿真、镜像及回退证据
+└─ .ai/        当前上下文与交接
+```
+
+未启用的媒体模块保留源码和测试，方便声画稳定后逐项恢复。当前位流不满足基础手动切图／轮播及全部扩展，不能作为完整赛题功能交付。
+
+继续使用 `build/media/game-audio-v4.img`，68157440 字节，SHA256：
+`37553923c0d73f69646ad592af4fe4b0d8b39c067435cc62a6ba29f87f03f637`。
+
+需要重建同布局镜像时：
+
+```powershell
+python script/pack_game_assets.py
+python script/make_sd_image.py build/media/game-audio-new.img assets/game/atlas.bmp assets/game/preview_1.bmp assets/game/preview_2.bmp assets/game/preview_3.bmp assets/game/preview_4.bmp assets/game/preview_5.bmp --audio-pack assets/audio/AUDIO.PAK
+python script/check_deployment.py --image build/media/game-audio-new.img
+```
+
+打包器拒绝覆盖已有镜像；不能把 .img 作为普通文件复制进卡。本轮无需重写原卡。游戏为自研 RTL 的 SMB 1-1 地上路线，含17个敌人生成点、道具／龟壳／火球、奖励与死亡／入城演出，保留昵称／头像／排行；不是 FC 模拟器，地下房、烟花和逐帧原作一致性未完成。

@@ -1,0 +1,1745 @@
+{
+  "format": "game-atlas-bmp-v2",
+  "tile_size": 16,
+  "atlas_columns": 8,
+  "atlas_rows": 16,
+  "atlas_region": [
+    0,
+    0,
+    128,
+    256
+  ],
+  "bmp_size": [
+    640,
+    480
+  ],
+  "transparent_rgb": [
+    255,
+    0,
+    255
+  ],
+  "signature": {
+    "x": 128,
+    "y": 0,
+    "rgb": [
+      [
+        71,
+        165,
+        29
+      ],
+      [
+        65,
+        165,
+        27
+      ],
+      [
+        77,
+        165,
+        23
+      ],
+      [
+        69,
+        165,
+        31
+      ],
+      [
+        95,
+        165,
+        5
+      ],
+      [
+        65,
+        165,
+        27
+      ],
+      [
+        84,
+        165,
+        14
+      ],
+      [
+        76,
+        165,
+        22
+      ],
+      [
+        65,
+        165,
+        27
+      ],
+      [
+        83,
+        165,
+        9
+      ],
+      [
+        95,
+        165,
+        5
+      ],
+      [
+        86,
+        165,
+        12
+      ],
+      [
+        50,
+        165,
+        104
+      ],
+      [
+        33,
+        165,
+        123
+      ],
+      [
+        64,
+        165,
+        26
+      ],
+      [
+        35,
+        165,
+        121
+      ]
+    ]
+  },
+  "palette": [
+    [
+      255,
+      0,
+      255
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      254,
+      254,
+      254
+    ],
+    [
+      247,
+      214,
+      181
+    ],
+    [
+      227,
+      157,
+      37
+    ],
+    [
+      231,
+      90,
+      16
+    ],
+    [
+      177,
+      52,
+      37
+    ],
+    [
+      156,
+      74,
+      0
+    ],
+    [
+      82,
+      33,
+      0
+    ],
+    [
+      106,
+      107,
+      4
+    ],
+    [
+      0,
+      173,
+      0
+    ],
+    [
+      16,
+      148,
+      0
+    ],
+    [
+      140,
+      214,
+      0
+    ],
+    [
+      173,
+      173,
+      173
+    ],
+    [
+      99,
+      99,
+      99
+    ],
+    [
+      57,
+      189,
+      255
+    ]
+  ],
+  "tiles": [
+    {
+      "id": 0,
+      "name": "EMPTY",
+      "source": null
+    },
+    {
+      "id": 1,
+      "name": "GROUND",
+      "source": "resources/graphics/tile_set.png",
+      "graphics_type": "Brick",
+      "frame": [
+        0,
+        0
+      ],
+      "crop": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "sha256_rgba": "60fce0736231ed67ec83b99e77eb6934dd21bfb13f2298525f39185b7abed01a",
+      "sky_transparency": false
+    },
+    {
+      "id": 2,
+      "name": "BRICK",
+      "source": "resources/graphics/tile_set.png",
+      "graphics_type": "Brick",
+      "frame": [
+        0,
+        1
+      ],
+      "crop": [
+        16,
+        0,
+        16,
+        16
+      ],
+      "sha256_rgba": "c4801a5c49d28a8c28be6c0759d61e8244b3542ba76d7fa96a7d24c06865d039",
+      "sky_transparency": false
+    },
+    {
+      "id": 3,
+      "name": "QUESTION",
+      "source": "resources/graphics/tile_set.png",
+      "graphics_type": "Question_Block",
+      "frame": [
+        0,
+        0
+      ],
+      "crop": [
+        384,
+        0,
+        16,
+        16
+      ],
+      "sha256_rgba": "c07868a8f7323412f66181faef10e1725ed53b23ccd94bbb012809dd65123085",
+      "sky_transparency": false
+    },
+    {
+      "id": 4,
+      "name": "USED",
+      "source": "resources/graphics/tile_set.png",
+      "graphics_type": "Question_Block",
+      "frame": [
+        0,
+        2
+      ],
+      "crop": [
+        416,
+        0,
+        16,
+        16
+      ],
+      "sha256_rgba": "f31ee33809fe538de2ae44e59fb585228fa9fb58565dcab97b5ebdf5e1455576",
+      "sky_transparency": false
+    },
+    {
+      "id": 5,
+      "name": "COIN",
+      "source": "resources/graphics/tile_set.png",
+      "graphics_type": "Coin",
+      "frame": [
+        0,
+        0
+      ],
+      "crop": [
+        384,
+        16,
+        16,
+        16
+      ],
+      "sha256_rgba": "a22b3398d0b20bd0e17b0787731bf00b992ee94b86fb162a3f894c6c37906d0b",
+      "sky_transparency": false
+    },
+    {
+      "id": 6,
+      "name": "FLAG",
+      "source": "resources/graphics/item_objects.png",
+      "graphics_type": "Flag",
+      "frame": [
+        0,
+        0
+      ],
+      "crop": [
+        128,
+        32,
+        16,
+        16
+      ],
+      "sha256_rgba": "e95403d4f9c7537145e9ed7bfe2ff075af563278de8374f7685796bd9aa0b7eb",
+      "sky_transparency": false
+    },
+    {
+      "id": 7,
+      "name": "PLAYER_IDLE",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Small_mario",
+      "frame": [
+        0,
+        6
+      ],
+      "crop": [
+        176,
+        32,
+        16,
+        16
+      ],
+      "sha256_rgba": "df73501340a59ab7aff81d0e4f414c9f65d16be8bb119643391fd0d5f42454b0",
+      "sky_transparency": false
+    },
+    {
+      "id": 8,
+      "name": "PLAYER_RUN0",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Small_mario",
+      "frame": [
+        0,
+        0
+      ],
+      "crop": [
+        80,
+        32,
+        16,
+        16
+      ],
+      "sha256_rgba": "8e9fefdc60da1d9ed3642a71450db344c3575e6eb2a3dbb5b8c415b1d221f421",
+      "sky_transparency": false
+    },
+    {
+      "id": 9,
+      "name": "PLAYER_RUN1",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Small_mario",
+      "frame": [
+        0,
+        1
+      ],
+      "crop": [
+        96,
+        32,
+        16,
+        16
+      ],
+      "sha256_rgba": "146e85ebc6930d64884ab40e508ce65be80fe0a47c136850798fe518f1e1df95",
+      "sky_transparency": false
+    },
+    {
+      "id": 10,
+      "name": "PLAYER_JUMP",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Small_mario",
+      "frame": [
+        0,
+        4
+      ],
+      "crop": [
+        144,
+        32,
+        16,
+        16
+      ],
+      "sha256_rgba": "e43e0571a513160846a6f7839979ae3243532eada2b6ccd781f2a315b2401233",
+      "sky_transparency": false
+    },
+    {
+      "id": 11,
+      "name": "ENEMY0",
+      "source": "resources/graphics/smb_enemies_sheet.png",
+      "graphics_type": "Chestnut",
+      "frame": [
+        0,
+        0
+      ],
+      "crop": [
+        0,
+        4,
+        16,
+        16
+      ],
+      "sha256_rgba": "6c0923e3bc872ff48924275c029cb798040010e5663507b71a4b96563b94ecf0",
+      "sky_transparency": false
+    },
+    {
+      "id": 12,
+      "name": "ENEMY1",
+      "source": "resources/graphics/smb_enemies_sheet.png",
+      "graphics_type": "Chestnut",
+      "frame": [
+        0,
+        1
+      ],
+      "crop": [
+        30,
+        4,
+        16,
+        16
+      ],
+      "sha256_rgba": "d7f43885d6c5ecc21622c51780af6802101181c66fb35e46ead06293ba638ed9",
+      "sky_transparency": false
+    },
+    {
+      "id": 13,
+      "name": "AVATAR0",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Small_mario",
+      "frame": [
+        0,
+        6
+      ],
+      "crop": [
+        176,
+        32,
+        16,
+        16
+      ],
+      "sha256_rgba": "df73501340a59ab7aff81d0e4f414c9f65d16be8bb119643391fd0d5f42454b0",
+      "sky_transparency": false
+    },
+    {
+      "id": 14,
+      "name": "AVATAR1",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Small_mario",
+      "frame": [
+        0,
+        0
+      ],
+      "crop": [
+        80,
+        32,
+        16,
+        16
+      ],
+      "sha256_rgba": "8e9fefdc60da1d9ed3642a71450db344c3575e6eb2a3dbb5b8c415b1d221f421",
+      "sky_transparency": false
+    },
+    {
+      "id": 15,
+      "name": "AVATAR2",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Small_mario",
+      "frame": [
+        0,
+        1
+      ],
+      "crop": [
+        96,
+        32,
+        16,
+        16
+      ],
+      "sha256_rgba": "146e85ebc6930d64884ab40e508ce65be80fe0a47c136850798fe518f1e1df95",
+      "sky_transparency": false
+    },
+    {
+      "id": 16,
+      "name": "AVATAR3",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Small_mario",
+      "frame": [
+        0,
+        2
+      ],
+      "crop": [
+        112,
+        32,
+        16,
+        16
+      ],
+      "sha256_rgba": "b72c2d71efda37c2af17f2522decb35b0a9da668370bbc58d45c00d28957d020",
+      "sky_transparency": false
+    },
+    {
+      "id": 17,
+      "name": "AVATAR4",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Small_mario",
+      "frame": [
+        0,
+        3
+      ],
+      "crop": [
+        128,
+        32,
+        16,
+        16
+      ],
+      "sha256_rgba": "d1291605f7f465957fd317da13f7c0427daed493b881a4387b2c26bfde6603bd",
+      "sky_transparency": false
+    },
+    {
+      "id": 18,
+      "name": "AVATAR5",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Small_mario",
+      "frame": [
+        0,
+        4
+      ],
+      "crop": [
+        144,
+        32,
+        16,
+        16
+      ],
+      "sha256_rgba": "e43e0571a513160846a6f7839979ae3243532eada2b6ccd781f2a315b2401233",
+      "sky_transparency": false
+    },
+    {
+      "id": 19,
+      "name": "AVATAR6",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Small_mario",
+      "frame": [
+        0,
+        5
+      ],
+      "crop": [
+        160,
+        32,
+        16,
+        16
+      ],
+      "sha256_rgba": "144e68277312a63a3d3dd6d78b64da0312382e929414c3b07bdbb74ba1b435ed",
+      "sky_transparency": false
+    },
+    {
+      "id": 20,
+      "name": "AVATAR7",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Small_mario",
+      "frame": [
+        0,
+        7
+      ],
+      "crop": [
+        192,
+        32,
+        16,
+        16
+      ],
+      "sha256_rgba": "03ab59dcd2bade248e5145586cf7f295036ade42301b3b27eda8af6d911be353",
+      "sky_transparency": false
+    },
+    {
+      "id": 21,
+      "name": "PIPE_TL",
+      "source": "resources/graphics/tile_set.png",
+      "graphics_type": null,
+      "frame": [
+        128,
+        0
+      ],
+      "crop": [
+        0,
+        128,
+        16,
+        16
+      ],
+      "sha256_rgba": "5cf2e40747b80fcbcc5d72a082ec8404d441d28fe2d16ce64429ad3131078663",
+      "sky_transparency": false
+    },
+    {
+      "id": 22,
+      "name": "PIPE_TR",
+      "source": "resources/graphics/tile_set.png",
+      "graphics_type": null,
+      "frame": [
+        128,
+        16
+      ],
+      "crop": [
+        16,
+        128,
+        16,
+        16
+      ],
+      "sha256_rgba": "5f62461ca7eabc9ff2b1f1ee559e72ef6ec23aa1d54aeb71f561f644ad2781e0",
+      "sky_transparency": false
+    },
+    {
+      "id": 23,
+      "name": "PIPE_BL",
+      "source": "resources/graphics/tile_set.png",
+      "graphics_type": null,
+      "frame": [
+        144,
+        0
+      ],
+      "crop": [
+        0,
+        144,
+        16,
+        16
+      ],
+      "sha256_rgba": "5df6f2900efd1fc39a8c07c388f12e4054f93ca6ab17a5deca59f11941f66e90",
+      "sky_transparency": false
+    },
+    {
+      "id": 24,
+      "name": "PIPE_BR",
+      "source": "resources/graphics/tile_set.png",
+      "graphics_type": null,
+      "frame": [
+        144,
+        16
+      ],
+      "crop": [
+        16,
+        144,
+        16,
+        16
+      ],
+      "sha256_rgba": "277c6ac6b8c89786c4b8d298d61580d2df34df341408e2f2ecef49bce6828643",
+      "sky_transparency": false
+    },
+    {
+      "id": 25,
+      "name": "STONE",
+      "source": "resources/graphics/tile_set.png",
+      "graphics_type": null,
+      "frame": [
+        64,
+        16
+      ],
+      "crop": [
+        16,
+        64,
+        16,
+        16
+      ],
+      "sha256_rgba": "736b589ffdc261507cd45bca90b8de5740713984c31c03029978254caa11a445",
+      "sky_transparency": false
+    },
+    {
+      "id": 26,
+      "name": "MUSHROOM",
+      "source": "resources/graphics/item_objects.png",
+      "graphics_type": "Mushroom",
+      "frame": [
+        0,
+        0
+      ],
+      "crop": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "sha256_rgba": "241e26a064e561ee67bee0bcdcc799cd73330f65b68b53973a49e44890b5a417",
+      "sky_transparency": false
+    },
+    {
+      "id": 27,
+      "name": "BIG_IDLE_TOP",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Big_mario",
+      "frame": [
+        0,
+        6
+      ],
+      "crop": [
+        176,
+        0,
+        16,
+        16
+      ],
+      "sha256_rgba": "f37a2e12af54db755a7964c14eb9eef75219ce6437399e1fd2f33106743e2535",
+      "sky_transparency": false
+    },
+    {
+      "id": 28,
+      "name": "BIG_IDLE_BOTTOM",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Big_mario",
+      "frame": [
+        0,
+        6
+      ],
+      "crop": [
+        176,
+        16,
+        16,
+        16
+      ],
+      "sha256_rgba": "c7b4f430fff6f114f0caad560091b6b809669c704e3c738c16db4379558d5e39",
+      "sky_transparency": false
+    },
+    {
+      "id": 29,
+      "name": "BIG_RUN0_TOP",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Big_mario",
+      "frame": [
+        0,
+        0
+      ],
+      "crop": [
+        80,
+        0,
+        16,
+        16
+      ],
+      "sha256_rgba": "09f8136d9c01510d8745008f0ae3a3098b6322919be1256d1b3767f018ffb1a9",
+      "sky_transparency": false
+    },
+    {
+      "id": 30,
+      "name": "BIG_RUN0_BOTTOM",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Big_mario",
+      "frame": [
+        0,
+        0
+      ],
+      "crop": [
+        80,
+        16,
+        16,
+        16
+      ],
+      "sha256_rgba": "14fe991835068ec5d39218d48882dab3f2222b0da2a8e5df28b6d423c6ae1251",
+      "sky_transparency": false
+    },
+    {
+      "id": 31,
+      "name": "BIG_RUN1_TOP",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Big_mario",
+      "frame": [
+        0,
+        1
+      ],
+      "crop": [
+        96,
+        0,
+        16,
+        16
+      ],
+      "sha256_rgba": "b28d7e760c23c00ac70b11617819a3ecb1b91d79940f76bf5d08e4088dc72539",
+      "sky_transparency": false
+    },
+    {
+      "id": 32,
+      "name": "BIG_RUN1_BOTTOM",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Big_mario",
+      "frame": [
+        0,
+        1
+      ],
+      "crop": [
+        96,
+        16,
+        16,
+        16
+      ],
+      "sha256_rgba": "1b2af15e966f38aa4f83635ec68678a26316c6759c30a4381c7fe9d3cb734c7e",
+      "sky_transparency": false
+    },
+    {
+      "id": 33,
+      "name": "BIG_JUMP_TOP",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Big_mario",
+      "frame": [
+        0,
+        4
+      ],
+      "crop": [
+        144,
+        0,
+        16,
+        16
+      ],
+      "sha256_rgba": "aed4a28cda258e704d8f35269a7ee9417b141a316ab001f5e707de98b1145814",
+      "sky_transparency": false
+    },
+    {
+      "id": 34,
+      "name": "BIG_JUMP_BOTTOM",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Big_mario",
+      "frame": [
+        0,
+        4
+      ],
+      "crop": [
+        144,
+        16,
+        16,
+        16
+      ],
+      "sha256_rgba": "fb33cfb307194fbce444c99a3504139892ac69578a3eaf385d87213be24093e9",
+      "sky_transparency": false
+    },
+    {
+      "id": 35,
+      "name": "BIG_CROUCH_TOP",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Big_mario",
+      "frame": [
+        0,
+        5
+      ],
+      "crop": [
+        160,
+        0,
+        16,
+        16
+      ],
+      "sha256_rgba": "4f8b57cb5a0e01575a5059508f32902c5b57556da79f75616af9e7cb57be90df",
+      "sky_transparency": false
+    },
+    {
+      "id": 36,
+      "name": "BIG_CROUCH_BOTTOM",
+      "source": "resources/graphics/mario_bros.png",
+      "graphics_type": "Big_mario",
+      "frame": [
+        0,
+        5
+      ],
+      "crop": [
+        160,
+        16,
+        16,
+        16
+      ],
+      "sha256_rgba": "e9e1532ab7e8756fb87067d77b6e4384535ec04f93cbdf9b257b0dac07a9c02b",
+      "sky_transparency": false
+    },
+    {
+      "id": 37,
+      "name": "CASTLE_00",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        120,
+        3232
+      ],
+      "crop": [
+        3232,
+        120,
+        16,
+        16
+      ],
+      "sha256_rgba": "7e5e8e0ef571af790a9b5f790daf83724b81267e9032616351757bae2f1304de",
+      "sky_transparency": true
+    },
+    {
+      "id": 38,
+      "name": "CASTLE_01",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        120,
+        3248
+      ],
+      "crop": [
+        3248,
+        120,
+        16,
+        16
+      ],
+      "sha256_rgba": "6580a61dcec0201134314a18d298e8aeac193b304f3025deab663c59240cd3f8",
+      "sky_transparency": true
+    },
+    {
+      "id": 39,
+      "name": "CASTLE_02",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        120,
+        3264
+      ],
+      "crop": [
+        3264,
+        120,
+        16,
+        16
+      ],
+      "sha256_rgba": "6580a61dcec0201134314a18d298e8aeac193b304f3025deab663c59240cd3f8",
+      "sky_transparency": true
+    },
+    {
+      "id": 40,
+      "name": "CASTLE_03",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        120,
+        3280
+      ],
+      "crop": [
+        3280,
+        120,
+        16,
+        16
+      ],
+      "sha256_rgba": "6580a61dcec0201134314a18d298e8aeac193b304f3025deab663c59240cd3f8",
+      "sky_transparency": true
+    },
+    {
+      "id": 41,
+      "name": "CASTLE_04",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        120,
+        3296
+      ],
+      "crop": [
+        3296,
+        120,
+        16,
+        16
+      ],
+      "sha256_rgba": "7e5e8e0ef571af790a9b5f790daf83724b81267e9032616351757bae2f1304de",
+      "sky_transparency": true
+    },
+    {
+      "id": 42,
+      "name": "CASTLE_10",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        136,
+        3232
+      ],
+      "crop": [
+        3232,
+        136,
+        16,
+        16
+      ],
+      "sha256_rgba": "7e5e8e0ef571af790a9b5f790daf83724b81267e9032616351757bae2f1304de",
+      "sky_transparency": true
+    },
+    {
+      "id": 43,
+      "name": "CASTLE_11",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        136,
+        3248
+      ],
+      "crop": [
+        3248,
+        136,
+        16,
+        16
+      ],
+      "sha256_rgba": "c60635224cf9f5dab9dacfd76c3e718ac84e9e08899440446621899e6e550dc5",
+      "sky_transparency": true
+    },
+    {
+      "id": 44,
+      "name": "CASTLE_12",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        136,
+        3264
+      ],
+      "crop": [
+        3264,
+        136,
+        16,
+        16
+      ],
+      "sha256_rgba": "1e18fd1151fc5c348bd41118483eaa5c8d79e539815de0bb86b415c2c2e18457",
+      "sky_transparency": true
+    },
+    {
+      "id": 45,
+      "name": "CASTLE_13",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        136,
+        3280
+      ],
+      "crop": [
+        3280,
+        136,
+        16,
+        16
+      ],
+      "sha256_rgba": "a35a7bba59dd733e6770fd2e8375b208e03569c2cb486e10162880fe1fa51724",
+      "sky_transparency": true
+    },
+    {
+      "id": 46,
+      "name": "CASTLE_14",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        136,
+        3296
+      ],
+      "crop": [
+        3296,
+        136,
+        16,
+        16
+      ],
+      "sha256_rgba": "7e5e8e0ef571af790a9b5f790daf83724b81267e9032616351757bae2f1304de",
+      "sky_transparency": true
+    },
+    {
+      "id": 47,
+      "name": "CASTLE_20",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        152,
+        3232
+      ],
+      "crop": [
+        3232,
+        152,
+        16,
+        16
+      ],
+      "sha256_rgba": "6580a61dcec0201134314a18d298e8aeac193b304f3025deab663c59240cd3f8",
+      "sky_transparency": true
+    },
+    {
+      "id": 48,
+      "name": "CASTLE_21",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        152,
+        3248
+      ],
+      "crop": [
+        3248,
+        152,
+        16,
+        16
+      ],
+      "sha256_rgba": "6948b67609adafe8971fea3e048181a550ad47e8bd84df75d0cc1cb60a2a6842",
+      "sky_transparency": true
+    },
+    {
+      "id": 49,
+      "name": "CASTLE_22",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        152,
+        3264
+      ],
+      "crop": [
+        3264,
+        152,
+        16,
+        16
+      ],
+      "sha256_rgba": "6948b67609adafe8971fea3e048181a550ad47e8bd84df75d0cc1cb60a2a6842",
+      "sky_transparency": true
+    },
+    {
+      "id": 50,
+      "name": "CASTLE_23",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        152,
+        3280
+      ],
+      "crop": [
+        3280,
+        152,
+        16,
+        16
+      ],
+      "sha256_rgba": "6948b67609adafe8971fea3e048181a550ad47e8bd84df75d0cc1cb60a2a6842",
+      "sky_transparency": true
+    },
+    {
+      "id": 51,
+      "name": "CASTLE_24",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        152,
+        3296
+      ],
+      "crop": [
+        3296,
+        152,
+        16,
+        16
+      ],
+      "sha256_rgba": "6580a61dcec0201134314a18d298e8aeac193b304f3025deab663c59240cd3f8",
+      "sky_transparency": true
+    },
+    {
+      "id": 52,
+      "name": "CASTLE_30",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        168,
+        3232
+      ],
+      "crop": [
+        3232,
+        168,
+        16,
+        16
+      ],
+      "sha256_rgba": "1e18fd1151fc5c348bd41118483eaa5c8d79e539815de0bb86b415c2c2e18457",
+      "sky_transparency": true
+    },
+    {
+      "id": 53,
+      "name": "CASTLE_31",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        168,
+        3248
+      ],
+      "crop": [
+        3248,
+        168,
+        16,
+        16
+      ],
+      "sha256_rgba": "1e18fd1151fc5c348bd41118483eaa5c8d79e539815de0bb86b415c2c2e18457",
+      "sky_transparency": true
+    },
+    {
+      "id": 54,
+      "name": "CASTLE_32",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        168,
+        3264
+      ],
+      "crop": [
+        3264,
+        168,
+        16,
+        16
+      ],
+      "sha256_rgba": "1540946bf33fba8c63f89fd50bbd2fba623a33852688e079bf01f608896eb10d",
+      "sky_transparency": true
+    },
+    {
+      "id": 55,
+      "name": "CASTLE_33",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        168,
+        3280
+      ],
+      "crop": [
+        3280,
+        168,
+        16,
+        16
+      ],
+      "sha256_rgba": "1e18fd1151fc5c348bd41118483eaa5c8d79e539815de0bb86b415c2c2e18457",
+      "sky_transparency": true
+    },
+    {
+      "id": 56,
+      "name": "CASTLE_34",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        168,
+        3296
+      ],
+      "crop": [
+        3296,
+        168,
+        16,
+        16
+      ],
+      "sha256_rgba": "1e18fd1151fc5c348bd41118483eaa5c8d79e539815de0bb86b415c2c2e18457",
+      "sky_transparency": true
+    },
+    {
+      "id": 57,
+      "name": "CASTLE_40",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        184,
+        3232
+      ],
+      "crop": [
+        3232,
+        184,
+        16,
+        16
+      ],
+      "sha256_rgba": "1e18fd1151fc5c348bd41118483eaa5c8d79e539815de0bb86b415c2c2e18457",
+      "sky_transparency": true
+    },
+    {
+      "id": 58,
+      "name": "CASTLE_41",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        184,
+        3248
+      ],
+      "crop": [
+        3248,
+        184,
+        16,
+        16
+      ],
+      "sha256_rgba": "1e18fd1151fc5c348bd41118483eaa5c8d79e539815de0bb86b415c2c2e18457",
+      "sky_transparency": true
+    },
+    {
+      "id": 59,
+      "name": "CASTLE_42",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        184,
+        3264
+      ],
+      "crop": [
+        3264,
+        184,
+        16,
+        16
+      ],
+      "sha256_rgba": "9503245a0161a939de15c2414db2d336e761822fa6cff8136e4148f58f1f782e",
+      "sky_transparency": true
+    },
+    {
+      "id": 60,
+      "name": "CASTLE_43",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        184,
+        3280
+      ],
+      "crop": [
+        3280,
+        184,
+        16,
+        16
+      ],
+      "sha256_rgba": "1e18fd1151fc5c348bd41118483eaa5c8d79e539815de0bb86b415c2c2e18457",
+      "sky_transparency": true
+    },
+    {
+      "id": 61,
+      "name": "CASTLE_44",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        184,
+        3296
+      ],
+      "crop": [
+        3296,
+        184,
+        16,
+        16
+      ],
+      "sha256_rgba": "1e18fd1151fc5c348bd41118483eaa5c8d79e539815de0bb86b415c2c2e18457",
+      "sky_transparency": true
+    },
+    {
+      "id": 62,
+      "name": "BUSH_L",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        176,
+        2672
+      ],
+      "crop": [
+        2672,
+        176,
+        16,
+        16
+      ],
+      "sha256_rgba": "7e5e8e0ef571af790a9b5f790daf83724b81267e9032616351757bae2f1304de",
+      "sky_transparency": true
+    },
+    {
+      "id": 63,
+      "name": "BUSH_R",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        176,
+        2688
+      ],
+      "crop": [
+        2688,
+        176,
+        16,
+        16
+      ],
+      "sha256_rgba": "d350e187bdc0ddeeaf213f87d85ef44737282ca0f48b06ae0437667e24de48a4",
+      "sky_transparency": true
+    },
+    {
+      "id": 64,
+      "name": "CLOUD_00",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        16,
+        2608
+      ],
+      "crop": [
+        2608,
+        16,
+        16,
+        16
+      ],
+      "sha256_rgba": "7e5e8e0ef571af790a9b5f790daf83724b81267e9032616351757bae2f1304de",
+      "sky_transparency": true
+    },
+    {
+      "id": 65,
+      "name": "CLOUD_01",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        16,
+        2624
+      ],
+      "crop": [
+        2624,
+        16,
+        16,
+        16
+      ],
+      "sha256_rgba": "18035b5f967cfd70191dd93b4045ef3a74937e57e1838c03b911542019280738",
+      "sky_transparency": true
+    },
+    {
+      "id": 66,
+      "name": "CLOUD_10",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        32,
+        2608
+      ],
+      "crop": [
+        2608,
+        32,
+        16,
+        16
+      ],
+      "sha256_rgba": "fb53ff64286b66384ccaa046932476bb54042bc0401fe0e537f85caff1b0d2cb",
+      "sky_transparency": true
+    },
+    {
+      "id": 67,
+      "name": "CLOUD_11",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        32,
+        2624
+      ],
+      "crop": [
+        2624,
+        32,
+        16,
+        16
+      ],
+      "sha256_rgba": "d61828cb465a8da56848cfe74de056f38ef16ed6695ead9cf6455db7404e444d",
+      "sky_transparency": true
+    },
+    {
+      "id": 68,
+      "name": "HILL_00",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        160,
+        3072
+      ],
+      "crop": [
+        3072,
+        160,
+        16,
+        16
+      ],
+      "sha256_rgba": "7e5e8e0ef571af790a9b5f790daf83724b81267e9032616351757bae2f1304de",
+      "sky_transparency": true
+    },
+    {
+      "id": 69,
+      "name": "HILL_01",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        160,
+        3088
+      ],
+      "crop": [
+        3088,
+        160,
+        16,
+        16
+      ],
+      "sha256_rgba": "c9132db0f1e37ec38ee84e7b9f8bea96ddfcdca96ef8d69254931ba9f7b4b3c1",
+      "sky_transparency": true
+    },
+    {
+      "id": 70,
+      "name": "HILL_02",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        160,
+        3104
+      ],
+      "crop": [
+        3104,
+        160,
+        16,
+        16
+      ],
+      "sha256_rgba": "640f8a62d640090454678dff0c11bad12d4911bc8faf5b909006ac339603de6b",
+      "sky_transparency": true
+    },
+    {
+      "id": 71,
+      "name": "HILL_03",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        160,
+        3120
+      ],
+      "crop": [
+        3120,
+        160,
+        16,
+        16
+      ],
+      "sha256_rgba": "c2267fd0226e25856f9eabfcebbc72b29f5e37bb7772803188638e84b185ac99",
+      "sky_transparency": true
+    },
+    {
+      "id": 72,
+      "name": "HILL_10",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        176,
+        3072
+      ],
+      "crop": [
+        3072,
+        176,
+        16,
+        16
+      ],
+      "sha256_rgba": "c9132db0f1e37ec38ee84e7b9f8bea96ddfcdca96ef8d69254931ba9f7b4b3c1",
+      "sky_transparency": true
+    },
+    {
+      "id": 73,
+      "name": "HILL_11",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        176,
+        3088
+      ],
+      "crop": [
+        3088,
+        176,
+        16,
+        16
+      ],
+      "sha256_rgba": "0ec881d6e6e66b174fe37f3d4a5086d8b843aa227931d073796a6754fa2328d2",
+      "sky_transparency": true
+    },
+    {
+      "id": 74,
+      "name": "HILL_12",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        176,
+        3104
+      ],
+      "crop": [
+        3104,
+        176,
+        16,
+        16
+      ],
+      "sha256_rgba": "81fda0c7827f0cbf467220c3c3dd609a94c962ddd39c8dc6ea1012b11c270a81",
+      "sky_transparency": true
+    },
+    {
+      "id": 75,
+      "name": "HILL_13",
+      "source": "resources/graphics/level_1.png",
+      "graphics_type": null,
+      "frame": [
+        176,
+        3120
+      ],
+      "crop": [
+        3120,
+        176,
+        16,
+        16
+      ],
+      "sha256_rgba": "f2aa62c2f4f69ccac7d7f470386bb2d2ca111a8c059f6b720710c1cbf2b2cc05",
+      "sky_transparency": true
+    },
+    {
+      "id": 76,
+      "name": "FLAG_POLE_TOP",
+      "source": "resources/graphics/tile_set.png",
+      "graphics_type": "Pole",
+      "frame": [
+        0,
+        0
+      ],
+      "crop": [
+        260,
+        136,
+        8,
+        16
+      ],
+      "sha256_rgba": "248e570ab5c6299f9372f85218145e5081fe2608de6412d3cdf8d434c6eacd84",
+      "sky_transparency": false
+    },
+    {
+      "id": 77,
+      "name": "FLAG_POLE_BODY",
+      "source": "resources/graphics/tile_set.png",
+      "graphics_type": "Pole",
+      "frame": [
+        0,
+        0
+      ],
+      "crop": [
+        260,
+        152,
+        8,
+        8
+      ],
+      "sha256_rgba": "7779aac922c1b95675ab47765a6ed561302b8cf82975af19a23a8b4ba54e0b45",
+      "sky_transparency": false
+    },
+    {
+      "id": 78,
+      "name": "ONEUP",
+      "source": "resources/graphics/item_objects.png",
+      "graphics_type": "Mushroom",
+      "frame": [
+        0,
+        1
+      ],
+      "crop": [
+        16,
+        0,
+        16,
+        16
+      ],
+      "sha256_rgba": "68e29e0b3906e4a25515756526834bcfe1fbde91fc1e23ec5ec541d89647fc51",
+      "sky_transparency": false
+    },
+    {
+      "id": 79,
+      "name": "STAR",
+      "source": "resources/graphics/item_objects.png",
+      "graphics_type": "Star",
+      "frame": [
+        0,
+        0
+      ],
+      "crop": [
+        0,
+        48,
+        16,
+        16
+      ],
+      "sha256_rgba": "3c966e760636d22e455ceec627625fe927b891677d67a6abd526adcbd1097c90",
+      "sky_transparency": false
+    },
+    {
+      "id": 80,
+      "name": "FLOWER",
+      "source": "resources/graphics/item_objects.png",
+      "graphics_type": "Flower",
+      "frame": [
+        0,
+        0
+      ],
+      "crop": [
+        0,
+        32,
+        16,
+        16
+      ],
+      "sha256_rgba": "2696cb09cc5dc0d1674e0f98009de5a39fcc9954ae08cdd25beb30e306498c74",
+      "sky_transparency": false
+    },
+    {
+      "id": 81,
+      "name": "KOOPA_TOP",
+      "source": "resources/graphics/smb_enemies_sheet.png",
+      "graphics_type": "Tortoise",
+      "frame": [
+        0,
+        0
+      ],
+      "crop": [
+        90,
+        0,
+        16,
+        16
+      ],
+      "sha256_rgba": "09cb481308aaec528a5780509e6a9e8ff5df6ba49e8ee7bf62b06009d756a826",
+      "sky_transparency": false
+    },
+    {
+      "id": 82,
+      "name": "KOOPA_BOTTOM",
+      "source": "resources/graphics/smb_enemies_sheet.png",
+      "graphics_type": "Tortoise",
+      "frame": [
+        0,
+        0
+      ],
+      "crop": [
+        90,
+        16,
+        16,
+        8
+      ],
+      "sha256_rgba": "1c9891f27de35a606869e5dd5f661f4b9c33b04981a1f01251a072ac332e8236",
+      "sky_transparency": false
+    },
+    {
+      "id": 83,
+      "name": "SHELL",
+      "source": "resources/graphics/smb_enemies_sheet.png",
+      "graphics_type": null,
+      "frame": [
+        4,
+        360
+      ],
+      "crop": [
+        360,
+        4,
+        16,
+        16
+      ],
+      "sha256_rgba": "1518e83a9ed28e14d89040f08a5d520e08f387b934c3490cfb51842243ba5b30",
+      "sky_transparency": false
+    },
+    {
+      "id": 84,
+      "name": "FIREBALL",
+      "source": "resources/graphics/smb_enemies_sheet.png",
+      "graphics_type": "Mario_fire",
+      "frame": [
+        0,
+        0
+      ],
+      "crop": [
+        360,
+        184,
+        16,
+        16
+      ],
+      "sha256_rgba": "d1070db1b5993877e8a34e6877c834093105a14a43317a34290b49f50760c72a",
+      "sky_transparency": false
+    }
+  ],
+  "preview_pages": [
+    "atlas.bmp",
+    "preview_1.bmp",
+    "preview_2.bmp",
+    "preview_3.bmp",
+    "preview_4.bmp",
+    "preview_5.bmp"
+  ],
+  "preview_sizes": [
+    [
+      640,
+      480
+    ],
+    [
+      320,
+      240
+    ],
+    [
+      800,
+      600
+    ],
+    [
+      641,
+      479
+    ],
+    [
+      640,
+      480
+    ],
+    [
+      960,
+      720
+    ]
+  ],
+  "preview_font_source": "src/video/osd_font.v",
+  "source_project": "Mario-master",
+  "source_license": "GPL-3.0 for source code; original art provenance requires review before public redistribution"
+}

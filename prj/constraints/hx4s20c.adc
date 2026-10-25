@@ -1,0 +1,29 @@
+set_pin_assignment {clk} {LOCATION = R7; IOSTANDARD = LVCMOS33;}
+set_pin_assignment {keys_n[0]} {LOCATION = A2; IOSTANDARD = LVCMOS33; PULLTYPE = PULLUP;}
+set_pin_assignment {keys_n[1]} {LOCATION = B2; IOSTANDARD = LVCMOS33; PULLTYPE = PULLUP;}
+set_pin_assignment {keys_n[2]} {LOCATION = B1; IOSTANDARD = LVCMOS33; PULLTYPE = PULLUP;}
+set_pin_assignment {keys_n[3]} {LOCATION = C1; IOSTANDARD = LVCMOS33; PULLTYPE = PULLUP;}
+set_pin_assignment {switches[0]} {LOCATION = C8; IOSTANDARD = LVCMOS33;}
+set_pin_assignment {switches[1]} {LOCATION = C7; IOSTANDARD = LVCMOS33;}
+set_pin_assignment {switches[2]} {LOCATION = C6; IOSTANDARD = LVCMOS33;}
+set_pin_assignment {switches[3]} {LOCATION = C5; IOSTANDARD = LVCMOS33;}
+set_pin_assignment {led[0]} {LOCATION = A4; IOSTANDARD = LVCMOS33;}
+set_pin_assignment {led[1]} {LOCATION = A3; IOSTANDARD = LVCMOS33;}
+set_pin_assignment {led[2]} {LOCATION = C10; IOSTANDARD = LVCMOS33;}
+set_pin_assignment {led[3]} {LOCATION = B12; IOSTANDARD = LVCMOS33;}
+set_pin_assignment {HDMI_CLK_P} {LOCATION = K1; IOSTANDARD = LVDS33;}
+set_pin_assignment {HDMI_D0_P} {LOCATION = F5; IOSTANDARD = LVDS33;}
+set_pin_assignment {HDMI_D1_P} {LOCATION = E3; IOSTANDARD = LVDS33;}
+set_pin_assignment {HDMI_D2_P} {LOCATION = B3; IOSTANDARD = LVDS33;}
+set_pin_assignment {HDMI_DDC_SCL} {LOCATION = P1; IOSTANDARD = LVCMOS33;}
+set_pin_assignment {HDMI_DDC_SDA} {LOCATION = R1; IOSTANDARD = LVCMOS33;}
+set_pin_assignment {sd_ncs} {LOCATION = A12; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8;}
+set_pin_assignment {sd_dclk} {LOCATION = A14; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8;}
+set_pin_assignment {sd_mosi} {LOCATION = A13; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8;}
+set_pin_assignment {sd_miso} {LOCATION = B14; IOSTANDARD = LVCMOS33; PULLTYPE = PULLUP;}
+set_pin_assignment {flash_cs_n} {LOCATION = P8; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8;}
+set_pin_assignment {flash_sck} {LOCATION = M9; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8;}
+set_pin_assignment {flash_mosi} {LOCATION = P7; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8;}
+set_pin_assignment {flash_miso} {LOCATION = N8; IOSTANDARD = LVCMOS33; PULLTYPE = PULLUP;}
+set_pin_assignment {flash_wp_n} {LOCATION = P9; IOSTANDARD = LVCMOS33;}
+set_pin_assignment {flash_hold_n} {LOCATION = R9; IOSTANDARD = LVCMOS33;}

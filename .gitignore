@@ -9,3 +9,7 @@ __pycache__/
 *.bit
 *.bin
 *.img
+prj/media_player.al
+prj/run_gui.tcl
+prj/verification.json
+prj/.lock.f

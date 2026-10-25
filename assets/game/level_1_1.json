@@ -1,0 +1,567 @@
+{
+  "format": "smb1-ground-area6-v1",
+  "source": "https://github.com/Xkeeper0/smb1/blob/1cc3c92cbbe8cda44903657f3da332688e806a89/src/levels/objects.asm",
+  "source_object_sha256": "162fc0bf0e2e7bd2ecda0ac1bf3551ee5f45a3f116fa6343badda72005c0b4ec",
+  "width_tiles": 212,
+  "height_tiles": 15,
+  "flag_x": 3168,
+  "castle_x": 3232,
+  "castle_door_x": 3264,
+  "objects": [
+    {
+      "offset": 2,
+      "raw": "07 81",
+      "x": 16,
+      "row": 7,
+      "type": 0,
+      "arg": 1
+    },
+    {
+      "offset": 4,
+      "raw": "47 24",
+      "x": 20,
+      "row": 7,
+      "type": 2,
+      "arg": 4
+    },
+    {
+      "offset": 6,
+      "raw": "57 00",
+      "x": 21,
+      "row": 7,
+      "type": 0,
+      "arg": 0
+    },
+    {
+      "offset": 8,
+      "raw": "63 01",
+      "x": 22,
+      "row": 3,
+      "type": 0,
+      "arg": 1
+    },
+    {
+      "offset": 10,
+      "raw": "77 01",
+      "x": 23,
+      "row": 7,
+      "type": 0,
+      "arg": 1
+    },
+    {
+      "offset": 12,
+      "raw": "c9 71",
+      "x": 28,
+      "row": 9,
+      "type": 7,
+      "arg": 1
+    },
+    {
+      "offset": 14,
+      "raw": "68 f2",
+      "x": 38,
+      "row": 8,
+      "type": 7,
+      "arg": 2
+    },
+    {
+      "offset": 16,
+      "raw": "e7 73",
+      "x": 46,
+      "row": 7,
+      "type": 7,
+      "arg": 3
+    },
+    {
+      "offset": 18,
+      "raw": "97 fb",
+      "x": 57,
+      "row": 7,
+      "type": 7,
+      "arg": 11
+    },
+    {
+      "offset": 20,
+      "raw": "06 83",
+      "x": 64,
+      "row": 6,
+      "type": 0,
+      "arg": 3
+    },
+    {
+      "offset": 22,
+      "raw": "5c 01",
+      "x": 69,
+      "row": 12,
+      "type": 0,
+      "arg": 1
+    },
+    {
+      "offset": 24,
+      "raw": "d7 22",
+      "x": 77,
+      "row": 7,
+      "type": 2,
+      "arg": 2
+    },
+    {
+      "offset": 26,
+      "raw": "e7 00",
+      "x": 78,
+      "row": 7,
+      "type": 0,
+      "arg": 0
+    },
+    {
+      "offset": 28,
+      "raw": "03 a7",
+      "x": 80,
+      "row": 3,
+      "type": 2,
+      "arg": 7
+    },
+    {
+      "offset": 30,
+      "raw": "6c 02",
+      "x": 86,
+      "row": 12,
+      "type": 0,
+      "arg": 2
+    },
+    {
+      "offset": 32,
+      "raw": "b3 22",
+      "x": 91,
+      "row": 3,
+      "type": 2,
+      "arg": 2
+    },
+    {
+      "offset": 34,
+      "raw": "e3 01",
+      "x": 94,
+      "row": 3,
+      "type": 0,
+      "arg": 1
+    },
+    {
+      "offset": 36,
+      "raw": "e7 07",
+      "x": 94,
+      "row": 7,
+      "type": 0,
+      "arg": 7
+    },
+    {
+      "offset": 38,
+      "raw": "47 a0",
+      "x": 100,
+      "row": 7,
+      "type": 2,
+      "arg": 0
+    },
+    {
+      "offset": 40,
+      "raw": "57 06",
+      "x": 101,
+      "row": 7,
+      "type": 0,
+      "arg": 6
+    },
+    {
+      "offset": 42,
+      "raw": "a7 01",
+      "x": 106,
+      "row": 7,
+      "type": 0,
+      "arg": 1
+    },
+    {
+      "offset": 44,
+      "raw": "d3 00",
+      "x": 109,
+      "row": 3,
+      "type": 0,
+      "arg": 0
+    },
+    {
+      "offset": 46,
+      "raw": "d7 01",
+      "x": 109,
+      "row": 7,
+      "type": 0,
+      "arg": 1
+    },
+    {
+      "offset": 48,
+      "raw": "07 81",
+      "x": 112,
+      "row": 7,
+      "type": 0,
+      "arg": 1
+    },
+    {
+      "offset": 50,
+      "raw": "67 20",
+      "x": 118,
+      "row": 7,
+      "type": 2,
+      "arg": 0
+    },
+    {
+      "offset": 52,
+      "raw": "93 22",
+      "x": 121,
+      "row": 3,
+      "type": 2,
+      "arg": 2
+    },
+    {
+      "offset": 54,
+      "raw": "03 a3",
+      "x": 128,
+      "row": 3,
+      "type": 2,
+      "arg": 3
+    },
+    {
+      "offset": 56,
+      "raw": "1c 61",
+      "x": 129,
+      "row": 12,
+      "type": 6,
+      "arg": 1
+    },
+    {
+      "offset": 58,
+      "raw": "17 21",
+      "x": 129,
+      "row": 7,
+      "type": 2,
+      "arg": 1
+    },
+    {
+      "offset": 60,
+      "raw": "6f 33",
+      "x": 134,
+      "row": 15,
+      "type": 3,
+      "arg": 3
+    },
+    {
+      "offset": 62,
+      "raw": "c7 63",
+      "x": 140,
+      "row": 7,
+      "type": 6,
+      "arg": 3
+    },
+    {
+      "offset": 64,
+      "raw": "d8 62",
+      "x": 141,
+      "row": 8,
+      "type": 6,
+      "arg": 2
+    },
+    {
+      "offset": 66,
+      "raw": "e9 61",
+      "x": 142,
+      "row": 9,
+      "type": 6,
+      "arg": 1
+    },
+    {
+      "offset": 68,
+      "raw": "fa 60",
+      "x": 143,
+      "row": 10,
+      "type": 6,
+      "arg": 0
+    },
+    {
+      "offset": 70,
+      "raw": "4f b3",
+      "x": 148,
+      "row": 15,
+      "type": 3,
+      "arg": 3
+    },
+    {
+      "offset": 72,
+      "raw": "87 63",
+      "x": 152,
+      "row": 7,
+      "type": 6,
+      "arg": 3
+    },
+    {
+      "offset": 74,
+      "raw": "9c 01",
+      "x": 153,
+      "row": 12,
+      "type": 0,
+      "arg": 1
+    },
+    {
+      "offset": 76,
+      "raw": "b7 63",
+      "x": 155,
+      "row": 7,
+      "type": 6,
+      "arg": 3
+    },
+    {
+      "offset": 78,
+      "raw": "c8 62",
+      "x": 156,
+      "row": 8,
+      "type": 6,
+      "arg": 2
+    },
+    {
+      "offset": 80,
+      "raw": "d9 61",
+      "x": 157,
+      "row": 9,
+      "type": 6,
+      "arg": 1
+    },
+    {
+      "offset": 82,
+      "raw": "ea 60",
+      "x": 158,
+      "row": 10,
+      "type": 6,
+      "arg": 0
+    },
+    {
+      "offset": 84,
+      "raw": "39 f1",
+      "x": 163,
+      "row": 9,
+      "type": 7,
+      "arg": 1
+    },
+    {
+      "offset": 86,
+      "raw": "87 21",
+      "x": 168,
+      "row": 7,
+      "type": 2,
+      "arg": 1
+    },
+    {
+      "offset": 88,
+      "raw": "a7 01",
+      "x": 170,
+      "row": 7,
+      "type": 0,
+      "arg": 1
+    },
+    {
+      "offset": 90,
+      "raw": "b7 20",
+      "x": 171,
+      "row": 7,
+      "type": 2,
+      "arg": 0
+    },
+    {
+      "offset": 92,
+      "raw": "39 f1",
+      "x": 179,
+      "row": 9,
+      "type": 7,
+      "arg": 1
+    },
+    {
+      "offset": 94,
+      "raw": "5f 38",
+      "x": 181,
+      "row": 15,
+      "type": 3,
+      "arg": 8
+    },
+    {
+      "offset": 96,
+      "raw": "6d c1",
+      "x": 198,
+      "row": 13,
+      "type": 4,
+      "arg": 1
+    },
+    {
+      "offset": 98,
+      "raw": "af 26",
+      "x": 202,
+      "row": 15,
+      "type": 2,
+      "arg": 6
+    }
+  ],
+  "cells_sha256": "3b3e3c729abb3d6910e8cfa17f91cf0ccb88f3f1680079a392b63a4224a229ec",
+  "limitations": [
+    "Underground bonus room is excluded.",
+    "Decorative background is rendered separately.",
+    "Normal gameplay recreation; not a cycle-accurate NES implementation."
+  ],
+  "enemy_source": "https://github.com/Xkeeper0/smb1/blob/1cc3c92cbbe8cda44903657f3da332688e806a89/src/levels/enemies.asm",
+  "source_enemy_sha256": "f091a27d7278196232a796c0fab0f7e44cfea0181b8d0bf69f827655463891da",
+  "enemies": [
+    {
+      "x": 352,
+      "y": 184,
+      "kind": 0,
+      "source_offset": 3,
+      "raw": "6b 06",
+      "page": 1,
+      "group_member": 0
+    },
+    {
+      "x": 640,
+      "y": 184,
+      "kind": 0,
+      "source_offset": 5,
+      "raw": "8b 86",
+      "page": 2,
+      "group_member": 0
+    },
+    {
+      "x": 864,
+      "y": 184,
+      "kind": 0,
+      "source_offset": 7,
+      "raw": "63 b7",
+      "page": 3,
+      "group_member": 0
+    },
+    {
+      "x": 888,
+      "y": 184,
+      "kind": 0,
+      "source_offset": 7,
+      "raw": "63 b7",
+      "page": 3,
+      "group_member": 1
+    },
+    {
+      "x": 1280,
+      "y": 56,
+      "kind": 0,
+      "source_offset": 11,
+      "raw": "03 06",
+      "page": 5,
+      "group_member": 0
+    },
+    {
+      "x": 1312,
+      "y": 56,
+      "kind": 0,
+      "source_offset": 13,
+      "raw": "23 06",
+      "page": 5,
+      "group_member": 0
+    },
+    {
+      "x": 1600,
+      "y": 184,
+      "kind": 0,
+      "source_offset": 15,
+      "raw": "4b b7",
+      "page": 6,
+      "group_member": 0
+    },
+    {
+      "x": 1624,
+      "y": 184,
+      "kind": 0,
+      "source_offset": 15,
+      "raw": "4b b7",
+      "page": 6,
+      "group_member": 1
+    },
+    {
+      "x": 1712,
+      "y": 184,
+      "kind": 1,
+      "source_offset": 17,
+      "raw": "bb 00",
+      "page": 6,
+      "group_member": 0
+    },
+    {
+      "x": 1872,
+      "y": 184,
+      "kind": 0,
+      "source_offset": 19,
+      "raw": "5b b7",
+      "page": 7,
+      "group_member": 0
+    },
+    {
+      "x": 1896,
+      "y": 184,
+      "kind": 0,
+      "source_offset": 19,
+      "raw": "5b b7",
+      "page": 7,
+      "group_member": 1
+    },
+    {
+      "x": 2032,
+      "y": 184,
+      "kind": 0,
+      "source_offset": 21,
+      "raw": "fb 37",
+      "page": 7,
+      "group_member": 0
+    },
+    {
+      "x": 2056,
+      "y": 184,
+      "kind": 0,
+      "source_offset": 21,
+      "raw": "fb 37",
+      "page": 7,
+      "group_member": 1
+    },
+    {
+      "x": 2096,
+      "y": 184,
+      "kind": 0,
+      "source_offset": 23,
+      "raw": "3b b7",
+      "page": 8,
+      "group_member": 0
+    },
+    {
+      "x": 2120,
+      "y": 184,
+      "kind": 0,
+      "source_offset": 23,
+      "raw": "3b b7",
+      "page": 8,
+      "group_member": 1
+    },
+    {
+      "x": 2832,
+      "y": 184,
+      "kind": 0,
+      "source_offset": 27,
+      "raw": "1b 37",
+      "page": 11,
+      "group_member": 0
+    },
+    {
+      "x": 2856,
+      "y": 184,
+      "kind": 0,
+      "source_offset": 27,
+      "raw": "1b 37",
+      "page": 11,
+      "group_member": 1
+    }
+  ]
+}

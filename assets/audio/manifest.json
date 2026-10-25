@@ -1,0 +1,249 @@
+{
+  "repository": "https://github.com/umaim/Mario",
+  "commit": "980c275358704a49f868567aeec5bdfb347c4781",
+  "format": "s16le-mono-48000-sector-v1",
+  "sha256": "967773dc66ac401ba04b0c123d061ffcffbbc498c0745e47bdaec275bd2a864e",
+  "rights": "Upstream code is MIT; rights to Nintendo-derived audio are not established. Review before public distribution.",
+  "tracks": [
+    {
+      "id": 0,
+      "name": "overworld",
+      "upstream_path": "Source/Sounds/Themes/mp3/Overworld.mp3",
+      "git_blob_sha1": "ac758b7f51df5c1b8459f48a1fa57b14c73ee707",
+      "source_sha256": "19c04e8fa6c81c8003477289e644218e4bde96caf927936ddc737126759947b3",
+      "pcm_sha256": "cd6abffb42de834728751c43751e98f4f773e36c95977d4c4e37f9768aeb75fd",
+      "samples": 1841947,
+      "seconds": 38.3739
+    },
+    {
+      "id": 1,
+      "name": "jump_small",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Jump Small.mp3",
+      "git_blob_sha1": "b6cb42bbc8d2ab3922bf46c2a1aa3aa38b084d89",
+      "source_sha256": "49943e7a05a947209f1a3291e4b5f8db692240a6b2efae26b659e3e7755b6d30",
+      "pcm_sha256": "0708c346ffb81b50131ce6e3595ea99d3ccf98273ebbf98ae7761e3d38c6f524",
+      "samples": 28326,
+      "seconds": 0.5901
+    },
+    {
+      "id": 2,
+      "name": "coin",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Coin.mp3",
+      "git_blob_sha1": "530aa3a1640b20f31b3f4279b0addd3916467701",
+      "source_sha256": "4522fee812136b35ea873d7b66d66d6c47c9d18bd87dcdc97951654fdf77bc7b",
+      "pcm_sha256": "919074b8d5116fdb947b48d8b8d77ec85c9db647f23e259af46be4a29ddba04d",
+      "samples": 45384,
+      "seconds": 0.9455
+    },
+    {
+      "id": 3,
+      "name": "stomp_kick",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Kick.mp3",
+      "git_blob_sha1": "1bc8bed4f1e975657f8740bafa1e6bf46f64a781",
+      "source_sha256": "8207561a349f4ff2631e724c36086215417b5612825d893e1e535a79b476cd14",
+      "pcm_sha256": "610a728356792d9a56d338d19e50ddc7a6b5282dc329fb270092f95c3b66fc44",
+      "samples": 8697,
+      "seconds": 0.1812
+    },
+    {
+      "id": 4,
+      "name": "death",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Player Dies.mp3",
+      "git_blob_sha1": "5c193f9007f2af0b66d65a22ded516fc5f91e030",
+      "source_sha256": "e48e6db031d908e9586ebbb2d4ef0b132d21a07002a484edb205e995906ccac1",
+      "pcm_sha256": "fc6a7428f859be2b4a7cb445f968715328edc78288037a90f81b44d2ec6ea6c8",
+      "samples": 130190,
+      "seconds": 2.7123
+    },
+    {
+      "id": 5,
+      "name": "start_pause",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Pause.mp3",
+      "git_blob_sha1": "41facf8cba372f6a2c1193da1a67fc49ed74b4a9",
+      "source_sha256": "c170e7b7448e02de6e89e7907753f55d600327ff5b59fbd28ce591cdcdd5539e",
+      "pcm_sha256": "d5501f174f003e41863ee0db23082a4b7f0d727484f6a03638273799aa5077a8",
+      "samples": 32889,
+      "seconds": 0.6852
+    },
+    {
+      "id": 6,
+      "name": "clear",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Level Complete.mp3",
+      "git_blob_sha1": "9e53419804356bb699bdcedfd1349b991ff0d831",
+      "source_sha256": "d1de3d7a3d1bef40fdf182db331872e2ca565e77be260752aaf0d0081c6d25ea",
+      "pcm_sha256": "27f6235cb1b7be3b27a3246025aaaad1ee2bb08d3569ce4c7e1e2f6e23ef7f7e",
+      "samples": 374910,
+      "seconds": 7.8106
+    },
+    {
+      "id": 7,
+      "name": "powerup",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Powerup.mp3",
+      "git_blob_sha1": "c81ac49d94983e520a6e76ede51df4c9a8b382e7",
+      "source_sha256": "d244dc2839de3edba2227db50d55332fb3ab6a52ce83d70f0b9d096e9806c334",
+      "pcm_sha256": "6747dc69b24f484322f53e036c777bb62e74813da5a257c59e594224d3e91a12",
+      "samples": 47480,
+      "seconds": 0.9892
+    },
+    {
+      "id": 8,
+      "name": "bump",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Bump.mp3",
+      "git_blob_sha1": "c426283643079d8069c81487f2e2f227ec2b3e39",
+      "source_sha256": "57cd2ce4aaaa0a6d38665eb6d78bb87387bfa684acc209ef4c5f7a2e2af8f715",
+      "pcm_sha256": "8ea8b0eaca8980a5c64856b4e762a2e5def2cb723100c80758aa937e258bcc14",
+      "samples": 10306,
+      "seconds": 0.2147
+    },
+    {
+      "id": 9,
+      "name": "hurt",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Power Down.mp3",
+      "git_blob_sha1": "13b77700c2aca4333d5656462a2522bf2818fdbd",
+      "source_sha256": "a78a86627d1210610caa23845e0d474444ecaa691b8f490cd6bea1b0d84fe37c",
+      "pcm_sha256": "667a06d849db1f17793111c2d4e9eaa6ee3e06c7ffe0c88572d7660d59a2a65d",
+      "samples": 37639,
+      "seconds": 0.7841
+    },
+    {
+      "id": 10,
+      "name": "flagpole",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Flagpole.mp3",
+      "git_blob_sha1": "22c03bb3baf4063a5e4238d2bcb8c2a3a056a01b",
+      "source_sha256": "0f717058f1a1e20a7d56b41a962bb625cbc1237fcbfe861d3ea8ba150b720511",
+      "pcm_sha256": "dcabf7cb3f1650b7a2b0956c5f1d26a61f24e4bab81d4fd1aa4b6af3532f71f6",
+      "samples": 56233,
+      "seconds": 1.1715
+    },
+    {
+      "id": 11,
+      "name": "one_up",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Gain Life.mp3",
+      "git_blob_sha1": "e9c8dc4c90d9cb8f2b2dc4ad31e6c3a9987539aa",
+      "source_sha256": "b9ce806badcf61583493fd242194d4ba7cbe5fc00edb8f88a82a4192ca15ddaf",
+      "pcm_sha256": "35218cdfd53116996ccb7c7202cd00f20a4d123ff64abf65d5b8696dd8a291cf",
+      "samples": 40782,
+      "seconds": 0.8496
+    },
+    {
+      "id": 12,
+      "name": "fireball",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Fireball.mp3",
+      "git_blob_sha1": "0b6f7f6daef6f5251ae9d10ed9d23053f6686d76",
+      "source_sha256": "753048ebd92a4a252c9e393058fe9c64d28e798432a6f0df11be1c840c245e6d",
+      "pcm_sha256": "1429667b1c5ed6eaec8be3603a88fe22d3f188876357917fb299a4fc24ba1bb4",
+      "samples": 6311,
+      "seconds": 0.1315
+    },
+    {
+      "id": 13,
+      "name": "star",
+      "upstream_path": "Source/Sounds/Themes/mp3/Star.mp3",
+      "git_blob_sha1": "70b66c3183ee834d7d5af3a4951ef721947ad4ec",
+      "source_sha256": "a1dacc60fc0b0644f12def3a5f37fe0b4b15806ffb3aa1557023c9114bff4615",
+      "pcm_sha256": "69c34ad6a8c925415c08cdecbaadf8b9aaab7e07441965164bbea9bd22b76083",
+      "samples": 919896,
+      "seconds": 19.1645
+    },
+    {
+      "id": 14,
+      "name": "powerup_appears",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Powerup Appears.mp3",
+      "git_blob_sha1": "a3a25774d78a8ee99dbfd7dfae2146ca8945a0c5",
+      "source_sha256": "b8860e4c554bcf7a4bae46d9ea7fce25c141b7813b8541702ad68c05ca7d7874",
+      "pcm_sha256": "e44ab71991fe73e016ed7c0cc26d018be36266b61ba38dd1c1e8e7e5935f4079",
+      "samples": 28049,
+      "seconds": 0.5844
+    },
+    {
+      "id": 15,
+      "name": "break_block",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Break Block.mp3",
+      "git_blob_sha1": "e977c275db9c97416f002d7c1574cc849358c225",
+      "source_sha256": "5607838c9af18013a0bea9a7f4a2c58fc7e3c18948d27113200384ed6ab1a24c",
+      "pcm_sha256": "c7d5f9f74217820760b96262f81d010e4d843670f00341da3f0d36b4b8e65583",
+      "samples": 26267,
+      "seconds": 0.5472
+    },
+    {
+      "id": 16,
+      "name": "jump_super",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Jump Super.mp3",
+      "git_blob_sha1": "241ba138042ec67da1d88e59cf8bbd8fa448dd16",
+      "source_sha256": "7d1aff3791a3d92e7494923701d77517c4f2dbc49d8cdf4d5546366f161d1a60",
+      "pcm_sha256": "70fa4018e6c84e242ebed3b85d148b18e11a7f062ad48f7c149c51600498ce34",
+      "samples": 28032,
+      "seconds": 0.584
+    },
+    {
+      "id": 17,
+      "name": "pipe",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Pipe.mp3",
+      "git_blob_sha1": "c218140f079793a599c28bbbb6d9a89839bfc3bf",
+      "source_sha256": "94b2b2416ec2fb5b0c43c7e7cdf1fe1f46b0189d865116980062e770d4b5c476",
+      "pcm_sha256": "bcdf325e089052bcdf611c7c357255cc0f667fea91594487131550cd2724eef7",
+      "samples": 37639,
+      "seconds": 0.7841
+    },
+    {
+      "id": 18,
+      "name": "firework",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Firework.mp3",
+      "git_blob_sha1": "881717c973879cbcba4925703c2bbb8037f0fea7",
+      "source_sha256": "341f86e11bfbdfdcbbcdd6f2c5dcaced3a3b7a5441e0b3399fc33a29d30cb3aa",
+      "pcm_sha256": "c8e31108992a4e26b2a2d9d0f13b9ed5678b0f6450153f4449e1225f06b210a2",
+      "samples": 20228,
+      "seconds": 0.4214
+    },
+    {
+      "id": 19,
+      "name": "hurry",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Hurry.mp3",
+      "git_blob_sha1": "afb1c098cdbbee820f2bdd23e50b627edb57427f",
+      "source_sha256": "94ea61da92bf194970984c01aae14bd116ce053652e20be0c7c49e452c27e7a5",
+      "pcm_sha256": "3fc6f4c570abd706e0322ffa59a0cb871e6a985b655627c80786c95b9f671a4f",
+      "samples": 146704,
+      "seconds": 3.0563
+    },
+    {
+      "id": 20,
+      "name": "game_over",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Game Over.mp3",
+      "git_blob_sha1": "378d5bdc0c1328ffc32ea3ec39dfd75c61da5716",
+      "source_sha256": "027250a40e93070e3ee1f80f6627af85ec24fc3a121fe59070beb4ed614ab641",
+      "pcm_sha256": "c9217555ebc6715d2dc0dbc60253fdb6297522046b721c53cd417aaf5c7b094a",
+      "samples": 305947,
+      "seconds": 6.3739
+    },
+    {
+      "id": 21,
+      "name": "underground",
+      "upstream_path": "Source/Sounds/Themes/mp3/Underworld.mp3",
+      "git_blob_sha1": "0efa01966680b6f40f27c2bceb96394735057791",
+      "source_sha256": "cda71935f018aa15dea42181f2ee9e963d0b108ef540f8a7b01b8e70f97c4377",
+      "pcm_sha256": "07b2408dd987b8e6bbce9dd7c4b331a15537bcb5b15d88ea7670ff304edf7ba4",
+      "samples": 600608,
+      "seconds": 12.5127
+    },
+    {
+      "id": 22,
+      "name": "stage_clear",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Stage Clear.mp3",
+      "git_blob_sha1": "ae9681267b32c53625f78fd40fc2296d66a992b1",
+      "source_sha256": "7ebbc45d09fecebd807f0b2bafb3e0fa76f3261028403e160e104c1510bfdf19",
+      "pcm_sha256": "2a5d573089221042ee7fbc7c1ca54ffbb2558cd46c2b90b3e3e55db9974ae027",
+      "samples": 270792,
+      "seconds": 5.6415
+    },
+    {
+      "id": 23,
+      "name": "vine",
+      "upstream_path": "Source/Sounds/Sounds/mp3/Vine Emerging.mp3",
+      "git_blob_sha1": "b05c4602a7bbdba3feee15d15afc3a817d217597",
+      "source_sha256": "4cd6f67ca58e9c28019a4e017453490df5124540db3811bdff4c45820191e85d",
+      "pcm_sha256": "5257a71c86c7bc18c5bddda15be3abab95eb67e5d6396b191b3e46d17dba9f6b",
+      "samples": 55674,
+      "seconds": 1.1599
+    }
+  ]
+}
