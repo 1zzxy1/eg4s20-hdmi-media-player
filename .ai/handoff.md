@@ -1,5 +1,15 @@
 # 当前交接
 
+## 2026-10-25 继续：改用现成官方 A 位流进行实板对照
+
+- 用户重新要求继续分析，随后明确选择现成 `31_hdmi_tx_display_A` 位流对照，不改代码、不重建。该指令覆盖下方“停止排障”的旧状态。A/B/C 失败和 BGM 正常的结论保持。
+- 本轮重放用户 C 观察：`script/test_video_board.ps1 -Bitstream build/video_svga/media_player_Runs/phy_1/media_player.bit -Mode C -RecordOnly -ObservedOrder '7 8 9 0 1 2 3 4 5 6' -EdgesAtSides no -Photo D:/download/5.jpg`，实际退出 1，FAIL；这是导入已发生的实测，不是新板测。
+- 官方源文件：`../官方资料/2_DEMO/DEMO_TD_5.6.2/31_hdmi_tx_display_A/prj/hdmi_tx_display_Runs/phy_1/hdmi_tx_display.bit`。复制到易选的 `build/official_a/official_hdmi_a.bit`，629635 字节，源与副本 SHA256 均为 `21545748d9c24860896ef2b84c1be2801b6093705b9b1ba7dfd6f7469eb31ad8`。没有重新编译、下载或固化。
+- 配套 phy_1/run.log 和 phy.area：EG4S20BG256，时钟 R7，复位 A2；HDMI K1/F5/E3/B3，LVDS33，与当前工程一致。官方源码使用 clk_wize 的 25/125MHz、640×480 方格图和加密 DVITransmitter/Serial_N_1_lvds，区别于课程 lane_lvds_10_1 链路。源码时序存在 DE 起点偏移，不应将其声称为严谨的标准时序黄金。
+- 实际 IO 报告有额外 VGA 输出，特别是 B2（本板 KEY2）为 VGA_HS 输出，测试不要按 KEY2；KEY1 是 A2 低有效复位，可按下再松开。无 SD 依赖、无声、无编号，预期彩色方格图；只做 SRAM 下载，保持同一 HDMI-A/线/屏，用户拍整屏。
+- 官方正常则优先比较自研输出与官方的时序/编码/串行器；官方也环绕则提高板/线/屏和模式兼容性假设优先级，不能仅此断言硬件故障或 RTL 无法处理。此对照同时改变多个模块，不足以单独锁定根因。当前等待这一次真实板测，不继续给用户重烧 A/B/C。
+- 本轮没有改 RTL/约束/游戏/BGM/SD，未访问实体卡或操作板卡，未推送；更新 .ai 记录并本地提交文档。
+
 ## 2026-10-25 最新：C 实板也失败，用户停止排障并要求交接
 
 - 用户提供 D:/download/5.jpg，画面明确 C SVGA DVI／800 X 600；可见 7 8 9 0 1 2 3 4 5 6，色条7跨屏两端，红绿框仍位于屏内。用户认为比之前更差，明确要求停下、写文档给其他AI。不得再把C记为“待实测”或继续改代码／构建。
