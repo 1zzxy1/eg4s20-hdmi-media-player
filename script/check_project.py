@@ -10,8 +10,10 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--video-diagnostic',action='store_true')
+    parser.add_argument('--video-svga',action='store_true')
     args=parser.parse_args()
-    top='src/diagnostic/video_diagnostic_top.v' if args.video_diagnostic else 'src/media_player_top.v'
+    if args.video_svga and args.video_diagnostic: parser.error('Choose one diagnostic target')
+    top='src/diagnostic/video_svga_top.v' if args.video_svga else 'src/diagnostic/video_diagnostic_top.v' if args.video_diagnostic else 'src/media_player_top.v'
     header=(ROOT/top).read_text().split(');',1)[0].split('(',1)[1]
     ports=[]
     width=None
@@ -43,7 +45,7 @@ def main():
                 assert any(hashlib.sha256(value).hexdigest()==row['source_sha256'] for value in
                            [normalized,normalized.replace(b'\n',b'\r\n')]),row['destination']
     # A console add_files call must not hide an incomplete saved GUI project.
-    project=(ROOT/('build/video_diagnostic/media_player.al' if args.video_diagnostic else 'prj/media_player.al')).read_text(encoding='utf-8')
+    project=(ROOT/('build/video_svga/media_player.al' if args.video_svga else 'build/video_diagnostic/media_player.al' if args.video_diagnostic else 'prj/media_player.al')).read_text(encoding='utf-8')
     registered={Path(p.replace('\\','/')).name for p in re.findall(r'<File Path="([^"]+)"',project)}
     required={p.name for directory in ('src','ip') for p in (ROOT/directory).rglob('*.v')}
     assert required<=registered,('RTL missing from saved TD project',sorted(required-registered))

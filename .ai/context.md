@@ -2,7 +2,17 @@
 
 当前目标只排查画面横向环绕。用户已实板确认BGM无杂音，仍有右侧内容绕到左侧；要求暂关其他功能并Git保存。游戏检查点已本地提交d84d8db，包含之前目录迁移和全部游戏素材；不推送、不烧板、不写卡。本轮未开子代理。
 
-## 当前诊断交付
+## 当前诊断交付：C SVGA DVI
+
+最新用户反馈 A/B 均为 8 9 0 1 2 3 4 5 6 7，照片 D:/download/44.jpg 为 B；红绿框一起到屏内，约128源像素循环偏移。原理想数字仿真不复现，不能当真实故障回归。显示器杂牌型号未知，用户要求从FPGA输出处理兼容性，不再询问型号。HITL脚本script/test_video_board.ps1导入已提供观察后A/B均FAIL，候选哈希非板卡回读证明。
+
+独立新顶层 src/diagnostic/video_svga_top.v，配套 video_svga_pattern.v、ip/clock/video_svga_pll.v、prj/constraints/video_svga.sdc。固定标准800×600／40MHz／200MHz，1056×628，+HS128 FP40 BP88，+VS4 FP1 BP23，约60.317Hz；RGB与同步一起寄存。只有DVI与厂商PHY，DDC闲置，无BRAM／DSP／存储／音频；不是EDID自适应。模式、PLL与DDC均不同，不能用C结果单独证明哪一项根因。
+
+使用 python script/test_video_svga.py；构建／工程／部署检查统一加 --video-svga。产物 build/video_svga/media_player_Runs/phy_1/media_player.bit，2026-10-25 14:37:01，629635字节，SHA256 56166cd2e49119044c8d68cf30cc1929cf5783e10fb5e818691d96fa2cf46167。原生TD实际退出0：setup +1.447ns／hold +0.025ns，Slice492=5.02%、BRAM0、DSP0，29IO／71RTL／81staging配套通过。显示C SVGA DVI／800 X 600；SW不切换，KEY4复位，LED2就绪、LED3常亮、LED4常灭。
+
+数字新专项最终会话46973实际退出0：功能PLL→正式PHY串行引脚→两整帧960000像素／1965235串行字、行帧同步、40／200MHz、KEY4、存储闲置均通过，损坏蓝通道负例被检出。起止源码哈希一致；回执build/video_svga_sim/result.json passed=true。实际路由网表确认KEY4 PAD输入寄存器ipclk接pix_clk，旧key_meta_reg时钟警告为打包后旧实例提示。无实板C结论，不宣称修复；14项deployment通过。本轮本地Git保存题为test: add SVGA compatibility probe for wrapped display，未推送。
+
+## 上一轮 A/B 诊断（数字通过，实屏两者均错）
 
 独立顶层src/diagnostic/video_diagnostic_top.v，video_diagnostic_pattern独立640×480计数器，video_diagnostic把同一图像送A原厂HDMI与B纯DVI。SW1下A／上B，KEY4复位；改变模式自动2.62ms复位，固定25MHz／800×525／约59.524Hz。编号0～9每栏64px，左红右绿上蓝下黄8px边框，LEFT000／RIGHT639标签。B绕开AXIS FIFO、音频岛和InfoFrame；仍共用原video_pll、厂商PHY和HDMI-A。没有横向补偿。
 
@@ -20,7 +30,7 @@ python script/check_deployment.py --video-diagnostic
 
 ## 下一步
 
-用户只需SRAM下载诊断bit，SW全下看A，SW1上看B，各拍完整屏幕，记录最左编号、右绿框是否绕左。若暂时无信号，KEY4按下松开再等几秒。两者均正常→对比游戏输入链；A错B正常→HDMI／AXIS／接收模式；均错→共用时钟／物理输出／显示器时序识别。组合只能指导排查，不能直接定根因。无实板A／B结果前不恢复功能或宣称修复。
+用户SRAM下载C的video_svga路径，SW全下，看0～9、红左绿右是否归位；无信号先KEY4按下松开等待，仍无信号单独记录。用户已给出A/B失败，不重复同一测试。C若正常，再将游戏接回兼容输出并重验BGM；仍错记录最左编号／边框位置继续定位，不增加横向补偿，不凭仿真宣称修复。游戏源码与原位流保持，原卡不用重写。
 
 ## 保留游戏基线
 

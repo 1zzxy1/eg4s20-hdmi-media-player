@@ -1,10 +1,14 @@
 # 软件验证
 
+最新实板反馈为 A/B 均按 `8 9 0…7` 环绕。当前候选入口 `python script/test_video_svga.py`，输出 `build/video_svga_sim/`：实际功能 PLL 产生 40／200MHz，经正式 PHY 引脚恢复 TMDS，核对独立 Python 黄金画面、800×600 完整帧、HS128／后肩88／行1056／帧628、KEY4 与存储闲置；损坏蓝通道的负例必须失败。PLL 启动同样需要仿真专用 reset 脉冲，不是实板冷启动证明。构建与部署参数为 `--video-svga`。
+
+原始实屏故障没有可自动复现的板级捕获接口，不能称此数字回归锁住了根因。`script/test_video_board.ps1` 按 diagnosing-bugs 的 HITL 模板适配 Windows，记录实际人工观察、照片与候选哈希；旧 A/B 的已给定反馈导入后均返回 FAIL。它不是照片自动识别或 FPGA 回读。最终验收仍需新 C 位流在用户显示器上显示正确。
+
 本轮纯视频诊断使用 `python script/test_video_diagnostic.py`，独立回执在build/video_diagnostic_sim/result.json。A原厂HDMI与B纯DVI的像素由独立Python图像黄金检查，包含编号、字体、完整边框和坐标色带；接收侧检查HS宽度／后肩／整行／整帧，正式PHY输出逐字对照；损坏AXIS RGB的负例必须检出。两路径共用640×480／25MHz，模拟检查不等于实屏正常。
 
 同一入口还运行tb_video_diagnostic_controls：实际功能PLL模型下检查A→B→A、KEY4按住／释放和存储引脚始终闲置。该模型用bench的200ns初始reset脉冲模拟上电，硬件原PLL配置不变；不将它当真实冷启验收。最终回执绑定19项工程输入及厂商模型哈希。本轮统一入口实际退出0，各项PASS；不替代旧14组或实板声画验证。
 
-诊断构建为 `python script/build_td_gui.py --video-diagnostic`；工程与部署检查都追加同一参数。输出／staging／回执均独立，不访问TF卡，不覆盖游戏位流。当前用户已确认游戏BGM无杂音，画面环绕仍在，等待A／B实屏对照。
+旧 A/B 诊断构建为 `python script/build_td_gui.py --video-diagnostic`；工程与部署检查都追加同一参数。输出／staging／回执均独立，不访问TF卡，不覆盖游戏位流。当前用户已确认游戏BGM无杂音，A/B 画面均环绕；不要把旧数字通过当作实屏已正常。
 
 当前是2026-10-25精简游戏候选，未启用的媒体代码与测试保留。优先运行：
 

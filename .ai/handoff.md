@@ -1,6 +1,23 @@
 # 当前交接
 
-## 2026-10-25 14:07 独立A／B画面诊断（当前交付）
+## 2026-10-25 A/B 均实屏环绕，转 C 标准 SVGA 兼容性探针
+
+- 用户提供 D:/download/44.jpg 并确认 A/B 都相同：编号 8 9 0 1 2 3 4 5 6 7，绿／红框一起移到屏内，约循环移位 128 源像素。照片显示 B PURE DVI；A 相同来自用户文字，不能伪称有 A 实拍。照片 SHA256 ec637267cd0fd1a8e4c163421f004fb57cc0258dc3d7b048a0fa87e428893117。
+- 用户不知道显示器品牌型号，要求从输出端处理兼容性，不再索要型号。眼前仍只排显示，保留已正常的 BGM，暂关其他功能，Git 本地保存；不烧板／写卡／固化／推送。本轮未开子代理。
+- 使用 diagnosing-bugs；没有板级自动捕获接口，旧数字仿真未复现真实环绕。按 HITL 模板适配 script/test_video_board.ps1，导入已经完成的用户观察，A/B 均实际返回 FAIL，记录在 build/video_board/；候选哈希不等于硬件回读验证。后续新板测需真实人工观察，不能用仿真绿色替代。
+- 三项假设已向用户展示：低分辨率模式兼容、共用 PLL/PHY、旧版同步差异。Git 对比 2a818358 的 rtl/reference/IP/video_pll.v、vendor/course/hdmi_phy_warpper.v、lane_lvds_10_1.v、rtl/reference/video_rgb_to_axis_640x480.v 与当前对应源码 diff 均为空。尚未定位根因，不对游戏做 -128px 补偿，也不认定资源高是原因。
+- 新 video_svga_top／video_svga_pattern／video_svga_pll 和独立 SDC：固定 DMT 800×600、40MHz／200MHz、总长1056×628、+HS128（FP40 BP88）、+VS4（FP1 BP23）、60.317Hz。PLL 保留 1GHz VCO／25MHz PFD 及原视频模拟参数，C0 外反馈50MHz、C1像素40、C2串行200。RGB及HS/VS/DE一起寄存，再进既有 DVI 编码／厂商PHY。原厂 HDMI 不实例化、DDC闲置，无 BRAM／DSP／游戏／SD／音频／排行。不是 EDID 自适应，C 成功也不能单凭它区分时钟、模式与DDC的具体因素。
+- 操作：下载 build/video_svga/media_player_Runs/phy_1/media_player.bit，屏上 C SVGA DVI／800 X 600，SW不切换，KEY4按下复位松开重锁。无SD也可显示、无声。LED2=复位释放，LED3常亮、LED4常灭、LED1备用输入观察。看0～9与左红右绿是否归位；无信号单独反馈，不能当通过。
+- build_td_gui.py／check_project.py／check_deployment.py 新 --video-svga，独立输出／staging／回执。第一次构建因TD不支持同条同时multiply/divide被检查拒绝，改为divide_by1.25；第二次捕获实际setup -0.670ns（图形字体→TMDS长组合路径），增加RGB与同步等长寄存；没有放宽断言或时序约束。
+- 最终TD会话37716实际退出0，无ECO，setup +1.447ns／hold +0.025ns，29IO／71RTL／81staging配套通过。bit 2026-10-25 14:37:01，629635字节，SHA256 56166cd2e49119044c8d68cf30cc1929cf5783e10fb5e818691d96fa2cf46167。Slice492／9800=5.02%、LUT942、FF182、BRAM0、DSP0、PLL1、GCLK2；PHY仅旧器件slot／pre-route hold提示。综合key_meta_reg旧clk警告类似PAD输入寄存器打包提示，未据此认定实物故障。
+- 新test_video_svga.py＋tb_video_svga.sv运行真实功能PLL与PHY，从串行引脚解码2整帧960000像素，与独立Python黄金逐像素对比，检查40/200MHz、HS128/BP88、1056×628、KEY4与存储闲置；蓝通道损坏负例必须检出。功能模型仍需200ns初始强制reset，不能称实板冷启动证明。初版bench对接收器取得锁定前的部分首行报799，已只在观察到VS后要求完整行，完整帧检查未放松。首轮会话58972退出0，但期间RTL新增寄存，不能将该回执作为最终输入证据；已追加起止哈希不变检查，当前最终重跑会话46973。
+- 14项deployment测试已通过。游戏／音频／公共HDMI／原PLL／PHY相对d84d8db均无diff；prj游戏bit仍c18d8f98，旧A/B bit仍b0becade。没有重跑未改游戏全回归；旧基线回执源集因新增探针过期，下次构建游戏需重新生成，不能伪造receipt。
+- README、板测说明、架构、赛题状态、test文档与.ai更新本轮事实。下一步等用户C实屏；成功再将游戏接入已验证输出并单独重验BGM，失败则用编号／边框／是否无信号继续收敛。尚不能称横向环绕修复。
+- 最终会话46973实际退出0：两整帧960000像素、1965235串行字、40／200MHz与行帧同步、KEY4及存储闲置通过，蓝通道损坏负例在x0/y0被检出；build/video_svga_sim/result.json passed=true，起止输入哈希不变。仿真恢复图与独立黄金逐字节相同，参考图已目视。功能模型的两个load_reg端口宽度警告来自厂商模型将该脚声明成5位，而原IP模板连接单bit0，值均为0；不是实屏根因证据。
+- 已导出最终路由网表build/video_svga_routed.v，确认keys_n[3]的PAD输入寄存器ipclk连接pix_clk，pixel_buffer经GCLK驱动该网；key_meta_reg旧实例不再存在，综合旧clk警告已核实为打包后的实例提示。导出没有改变位流。
+- 本轮按用户要求本地Git保存诊断进度，提交题为 test: add SVGA compatibility probe for wrapped display；未推送。当前交付仍为56166cd2候选，实板待测。
+
+## 2026-10-25 14:07 独立A／B画面诊断（历史交付，后续实测两者均错）
 
 - 用户确认BGM已无杂音，右侧画面绕左仍存在，明确要求先关其他功能并Git保存。已本地提交游戏检查点d84d8db（包括此前未提交的目录迁移、全部游戏源码／素材／文档），未推送。BGM已好这一实板结论覆盖下方“无实测”的旧记录，不能宣称画面已好。
 - 新src/diagnostic三模块：独立800×525／640×480计数器，10个64px编号栏、8px四色边框、左右000／639标签和坐标色带；同一像素送A原厂HDMI适配器和B纯DVI编码。SW1下A／上B，模式变化触发65536像素时钟复位，KEY4可手动复位；仍同一25MHzPLL／厂商PHY／HDMI-A，无偏移补偿。音频样本／ACR不送，不实例化游戏／SD／PCM／排行／SDRAM，SD和Flash片选高。B绕过AXIS／InfoFrame／数据岛，不代表改变游戏音乐实现。

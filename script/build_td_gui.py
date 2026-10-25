@@ -79,13 +79,16 @@ def main():
     parser.add_argument('--td',default=os.environ.get('TD_CONSOLE','E:/1_software/TD/bin/td_commands_prompt.exe'))
     parser.add_argument('--negative-control',action='store_true')
     parser.add_argument('--video-diagnostic',action='store_true',help='Build isolated video-only HDMI/DVI board diagnostic')
+    parser.add_argument('--video-svga',action='store_true',help='Build independent 800x600 DVI compatibility probe')
     args=parser.parse_args()
+    if args.video_svga and (args.video_diagnostic or args.negative_control):
+        parser.error('SVGA, A/B diagnostic and negative control are separate builds')
     if args.video_diagnostic and args.negative_control:
         parser.error('Diagnostic and missing-constraint negative control are separate builds')
-    out=ROOT/('build/video_diagnostic' if args.video_diagnostic else 'build/td_gui_no_constraints' if args.negative_control else 'prj')
-    stage=ROOT/('build/staging/video_diagnostic' if args.video_diagnostic else 'build/staging/negative' if args.negative_control else 'build/staging/gui')
-    top='video_diagnostic_top' if args.video_diagnostic else 'media_player_top'
-    sdc='video_diagnostic.sdc' if args.video_diagnostic else 'media_player.sdc'
+    out=ROOT/('build/video_svga' if args.video_svga else 'build/video_diagnostic' if args.video_diagnostic else 'build/td_gui_no_constraints' if args.negative_control else 'prj')
+    stage=ROOT/('build/staging/video_svga' if args.video_svga else 'build/staging/video_diagnostic' if args.video_diagnostic else 'build/staging/negative' if args.negative_control else 'build/staging/gui')
+    top='video_svga_top' if args.video_svga else 'video_diagnostic_top' if args.video_diagnostic else 'media_player_top'
+    sdc='video_svga.sdc' if args.video_svga else 'video_diagnostic.sdc' if args.video_diagnostic else 'media_player.sdc'
     out.mkdir(parents=True,exist_ok=True)
     files=stage_sources(stage)
     (out/'verification.json').write_text(json.dumps({'passed':False,'state':'running'}))
@@ -164,7 +167,7 @@ if __name__=='__main__':
     except (Exception, SystemExit) as error:
         # A failed flow must not leave a misleading "running" receipt or allow
         # an old bitstream to be mistaken for an accepted current build.
-        receipt_dir=ROOT/('build/video_diagnostic' if '--video-diagnostic' in sys.argv else 'build/td_gui_no_constraints' if '--negative-control' in sys.argv else 'prj')
+        receipt_dir=ROOT/('build/video_svga' if '--video-svga' in sys.argv else 'build/video_diagnostic' if '--video-diagnostic' in sys.argv else 'build/td_gui_no_constraints' if '--negative-control' in sys.argv else 'prj')
         if receipt_dir.exists():
             (receipt_dir/'verification.json').write_text(json.dumps({
                 'passed':False,'state':'failed','error':str(error)},indent=2))

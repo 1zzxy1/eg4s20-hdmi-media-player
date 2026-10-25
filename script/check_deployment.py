@@ -141,14 +141,16 @@ def main():
                         help='Audio pack/manifest paired with the image (default: accepted original)')
     parser.add_argument('--json', action='store_true', help='Print a machine-readable result')
     parser.add_argument('--video-diagnostic', action='store_true', help='Check isolated video-only build; no media required')
+    parser.add_argument('--video-svga', action='store_true', help='Check 800x600 DVI probe; no media required')
     args = parser.parse_args()
+    if args.video_svga and args.video_diagnostic: parser.error('Choose one diagnostic target')
     try:
-        if args.video_diagnostic:
-            directory = ROOT / 'build/video_diagnostic'
+        if args.video_diagnostic or args.video_svga:
+            directory = ROOT / ('build/video_svga' if args.video_svga else 'build/video_diagnostic')
             receipt = json.loads((directory / 'verification.json').read_text(encoding='utf-8'))
-            require(receipt.get('top') == 'video_diagnostic_top', 'Receipt is not the video diagnostic')
+            require(receipt.get('top') == ('video_svga_top' if args.video_svga else 'video_diagnostic_top'), 'Receipt is not the selected video diagnostic')
             build = check_build(receipt, directory / 'media_player_Runs/phy_1/media_player.bit',
-                                ROOT / 'build/staging/video_diagnostic', expected_staging())
+                                ROOT / ('build/staging/video_svga' if args.video_svga else 'build/staging/video_diagnostic'), expected_staging())
             if args.json:
                 print(json.dumps({'passed': True, 'build': build, 'media': None,
                                   'scope': 'Video diagnostic files only; no device accessed'}, indent=2))

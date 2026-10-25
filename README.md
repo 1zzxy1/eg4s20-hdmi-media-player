@@ -2,6 +2,23 @@
 
 ## 当前：仅测试画面错位（2026-10-25）
 
+最新实测：A、B 都是 `8 9 0 1 2 3 4 5 6 7`，左右边框一起移到屏内（照片 `D:/download/44.jpg`）。旧数字检查未覆盖此实屏故障，不能据其通过宣称修复；也没有证据认定资源占用是根因。显示器型号未知，后续从 FPGA 输出兼容性处理。
+
+当前待板测改用独立 **C SVGA DVI**：固定标准 800×600、40MHz、1056×628、约 60.317Hz、正极性同步。不读取 EDID，不是已完成的自动分辨率适配；它用于检验不同输出模式能否避免环绕。原 A/B 和游戏位流保留。
+
+下载 `build/video_svga/media_player_Runs/phy_1/media_player.bit`，2026-10-25 14:37:01，629635 字节，SHA256 `56166cd2e49119044c8d68cf30cc1929cf5783e10fb5e818691d96fa2cf46167`。SW 全下，KEY4 可复位；只显示测试图、没有声音，不需要 SD 卡。应看到 `C SVGA DVI / 800 X 600`，编号从左到右 0～9、左红右绿、上蓝下黄。操作见 [板上测试](doc/board-demo.md)。
+
+```powershell
+python script/test_video_svga.py
+python script/build_td_gui.py --video-svga
+python script/check_project.py --video-svga
+python script/check_deployment.py --video-svga
+```
+
+原生 TD 构建通过：setup +1.447ns、hold +0.025ns，Slice 492／9800（5.02%）、BRAM 0、DSP 0。最终数字专项通过两整帧 960000 像素、1965235 串行字及损坏颜色负例，功能 PLL 和同步检查通过；实际画面仍待用户下载确认。游戏的已正常 BGM 实现未修改，原卡不用重写。
+
+### 上一轮 A/B 诊断（已实测两者都错位）
+
 用户已实测确认BGM无杂音，右侧画面绕到左侧仍存在。游戏源码／素材已保存为本地Git检查点 `d84d8db`。现在使用独立纯视频诊断位流，暂时关闭游戏、TF读取、音频与排行写入；下面的游戏操作保留为基线说明。
 
 诊断位流：`build/video_diagnostic/media_player_Runs/phy_1/media_player.bit`，14:07:07，629641字节，SHA256 `b0becade21261481568ac2ff81feb4c1e17c6c3121c1be0a1df7e451305cdde4`。SW1下拨为 `A VENDOR HDMI`，上拨为 `B PURE DVI`，KEY4重置视频；同一HDMI-A接口、同一640×480／25MHz时序。没有声音是诊断版的预期行为，不需要SD卡。看0～9编号是否从左到右连续、左红右绿边框是否在屏幕两端。具体步骤和结果判读见 [板上测试](doc/board-demo.md)。
@@ -19,7 +36,7 @@ python script/check_deployment.py --video-diagnostic
 
 游戏基线保留游戏、昵称／头像、排行、TF音乐与音效，暂停素材浏览、轮播、波形、调色及显示设置。用户最新实测确认BGM无杂音，但右侧画面仍绕到左边，因此本轮先使用上面的纯视频诊断。
 
-Git 本地和远端 main 仅有马里奥开发前的源码，没有“第一次 BGM 正常”的游戏提交。已核对本机历史记录，未找到可完整恢复的中间源码；因此保留游戏，依据旧版接法恢复原厂 HDMI 核、上电 EDID 触发及实际 DDC 引脚连接，同时精简当前顶层。资源高、HDMI 差异均未证实为实板故障根因。
+Git 的早期历史只有马里奥开发前的源码，没有“第一次 BGM 正常”的游戏提交；当前完整游戏已本地保存为 d84d8db。已核对本机历史记录，未找到可完整恢复的中间源码；因此保留游戏，依据旧版接法恢复原厂 HDMI 核、上电 EDID 触发及实际 DDC 引脚连接，同时精简当前顶层。资源高、HDMI 差异均未证实为实板故障根因。
 
 ## 下载与操作
 
