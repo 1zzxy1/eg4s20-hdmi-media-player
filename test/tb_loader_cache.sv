@@ -73,9 +73,9 @@ module tb_loader_cache;
     initial begin
         repeat(5)tick();rst=0;await_index(1);await_full();
         if(count!=6) $fatal(1,"scanner must catalog more than four images");
-        before_requests=dut.sd_card_top_m0.served;
+        before_requests=dut.internal_card.sd_card_top_m0.served;
         allow_ack=0;press();repeat(80)tick();
-        if(index!=1 || commit==ack || dut.sd_card_top_m0.served!=before_requests)
+        if(index!=1 || commit==ack || dut.internal_card.sd_card_top_m0.served!=before_requests)
             $fatal(1,"ready switch read SD or recycled old slot before ack");
         allow_ack=1;await_index(2);await_full();
         press();await_index(4);await_full();

@@ -10,7 +10,8 @@ module frame_read_write
 	parameter BURST_SIZE             = 256,
 	parameter WRITE_V_FLIP           = 1,      // 1: vertical flip when writing TF/BMP frame into SDRAM
 	parameter FRAME_WIDTH            = 640,
-	parameter FRAME_HEIGHT           = 480
+	parameter FRAME_HEIGHT           = 480,
+    parameter ALIGNMENT              = 0
 ) 
 (
 	input                            rst,                  
@@ -70,7 +71,8 @@ module frame_read_write
 	input[ADDR_BITS - 1:0]           write_len,                  // data write module write request data length
 	input                            write_en,                   // data write module write request for one data
 	input[WRITE_DATA_BITS - 1:0]     write_data,
-    output wire                     write_ready
+    output wire                     write_ready,
+    input wire [9:0]                 alignment_offset
 
 );
 wire[8:0]                                       wrusedw_raw, rdusedw_raw;
@@ -84,6 +86,45 @@ wire								 App_wr_busy;
 
 wire                                 read_fifo_aclr;             // fifo Asynchronous clear
 wire                                 write_fifo_aclr;            // fifo Asynchronous clear
+wire [3:0] read_shift;
+wire fifo_pixel_valid;
+wire [MEM_DATA_BITS-1:0] fifo_pixel;
+generate if(ALIGNMENT)begin:rotate_line
+    // Delay each row's prefix until its end. While emitting that prefix,
+    // capture the next row's prefix in the same 16-word buffer. This keeps
+    // SDRAM BL4/bank addressing aligned without allocating a frame/line RAM.
+    reg [MEM_DATA_BITS-1:0] prefix[0:15];
+    reg [9:0] column;
+    reg [8:0] row;
+    reg flushing,valid;
+    reg [3:0] flush_index;
+    reg [MEM_DATA_BITS-1:0] pixel;
+    assign fifo_pixel_valid=valid;
+    assign fifo_pixel=pixel;
+    always @(posedge mem_clk or posedge read_fifo_aclr)begin
+        if(read_fifo_aclr)begin
+            column<=0;row<=0;flushing<=0;flush_index<=0;valid<=0;pixel<=0;
+        end else begin
+            valid<=0;
+            if(Sdr_rd_en)begin
+                if(column<read_shift)begin
+                    prefix[column[3:0]]<=Sdr_rd_dout;
+                    if(row!=0)begin pixel<=prefix[column[3:0]];valid<=1;end
+                end else begin pixel<=Sdr_rd_dout;valid<=1;end
+                if(column==FRAME_WIDTH-1)begin
+                    column<=0;row<=row+1'b1;
+                    if(row==FRAME_HEIGHT-1&&read_shift!=0)begin flushing<=1;flush_index<=0;end
+                end else column<=column+1'b1;
+            end else if(flushing)begin
+                pixel<=prefix[flush_index];valid<=1;flush_index<=flush_index+1'b1;
+                if(flush_index==read_shift-1'b1)flushing<=0;
+            end
+        end
+    end
+end else begin:unrotated_line
+    assign fifo_pixel_valid=Sdr_rd_en;
+    assign fifo_pixel=Sdr_rd_dout;
+end endgenerate
 always @(posedge write_clk or posedge write_fifo_aclr)
     if(write_fifo_aclr) write_release<=0;
     else write_release<={write_release[1:0],1'b1};
@@ -155,9 +196,9 @@ rfifo_32_32_512 read_buf
 	.clkr                     	(read_clk                   ),          // Read side clock
 	.clkw                     	(mem_clk                    ),          // Write side clock
 	.rst                      	(read_fifo_aclr             ),          // Asynchronous clear
-	.we                     	(Sdr_rd_en       			),          // Write Request
+	.we                     	(fifo_pixel_valid),          // Write Request
 	.re                     	(read_en                    ),          // Read Request
-	.di                      	(Sdr_rd_dout                ),          // Input Data
+	.di                      	(fifo_pixel),          // Input Data
 	.empty_flag					(                           ),          // Read side Empty flag
 	.full_flag					(                           ),          // Write side Full flag
 	.wrusedw                	(wrusedw_raw                  ),          // Read Used Words
@@ -171,7 +212,9 @@ frame_fifo_read
 	.MEM_DATA_BITS              (MEM_DATA_BITS            ),
 	.ADDR_BITS                  (ADDR_BITS                ),
 	.BURST_BITS                 (BURST_BITS               ),
-	.BURST_SIZE                 (BURST_SIZE               )
+	.BURST_SIZE                 (BURST_SIZE               ),
+    .ALIGNMENT                  (ALIGNMENT),
+    .FRAME_WIDTH                (FRAME_WIDTH)
 )
 frame_fifo_read_m0
 (
@@ -196,7 +239,9 @@ frame_fifo_read_m0
 	.read_addr_index            (read_addr_index          ),    
 	.read_len                   (read_len                 ),
 	.fifo_aclr                  (read_fifo_aclr           ),
-	.wrusedw                	(wrusedw                  )
+	.wrusedw                	(wrusedw                  ),
+    .alignment_offset           (alignment_offset),
+    .read_shift                 (read_shift)
 );
 
 endmodule

@@ -1,5 +1,16 @@
 # 当前交接
 
+## 2026-10-25 恢复媒体实验室：构建与专项通过，待实板验收
+
+- 用户已确认 d4a501e 人工补偿版实屏正常，要求补回停用功能并多次 continue。当前工作是恢复，不再等待旧官方探针或对齐反馈。不操作实体 SD／板卡、不推送；用户曾授权 Git 保存进度，最终验证后本地提交。
+- 正常旧版完整备份为 build/rollback-evidence/board-confirmed-20261025-aligned/，bit SHA256 4046a723964bd328ad99d0e059d90ffbb68a2446ffdc922797fa5b294dea83e5。原 V4 镜像 37553923c0d73f69646ad592af4fe4b0d8b39c067435cc62a6ba29f87f03f637 未变，不需重写。
+- 已恢复图库四槽／切图／轮播／转场、动态字幕、实际 PCM 波形、亮度／对比度等设置。新 media_gallery 封装存储，BOOT_ATLAS 复用同一 BMP decoder 优先发布游戏纹理，再扫描图库，音频扇区优先。游戏不等待图库就绪。全路径使用相同横向补偿，SDRAM 16 词对齐＋寄存器前缀处理任意偏移。
+- 控件见 README／doc/board-demo：首屏 SW1 素材、SW2 字幕波形、SW1＋SW3 显示、SW4 音频；SW3 单独校准。KEY4 进昵称，松开再长按一秒开始，之后 Debug 禁用。游戏 KEY3 左／KEY2 跳／KEY1 右／SW4 跑火。
+- 全功能布局曾超过 MSlice 4900；已共享 BMP 解码器、窄化目录／字串、分时校准数字、同步波形 RAM 和最终字形 ROM。同步 SDRAM 前缀尝试资源更差，已撤回。最终布局 4865 MSlice／4864 LSlice；报告 LUT18368/19600=93.71%、BRAM62/64、DSP7。局部时钟警告精确定位到 mem_clk_shift→u_gallery/u_sdram/u2_ram/SDRAM_CLK、0/1负载，为原有 SDRAM 转发时钟；脚本仅补 mem_clk_shift 名称匹配，仍拒绝其他来源警告。
+- 最终原生构建会话13440退出0，真实 fix_hold -eco 将 hold -0.011ns 修到 +0.024ns，setup +2.435ns，并重新 bitgen。当前 bit 为 prj/media_player_Runs/phy_1/media_player.bit，2026-10-25 16:59:02、636621字节，SHA256 777df2d066b3dd2074eb470b16a7a08278685583aa7654752fb5360c3f7c2b89。verification passed=true；check_project 29IO/74RTL、check_deployment 84staging/6BMP/24轨通过，14项deployment测试通过。不能用旧bit或原生hold未修复的bit替代。
+- 已完成游戏 33 项（新数值专项前）、基础媒体15项、BMP29种、alignment 全套与1024数字、真实原厂 SDRAM 全offset低4位＋128／639、真实BMP128／639。最终字形 ROM 的 offset128 lab、256字符×8行字体差分、4096色彩组合、scope、menu 已通过；最终18帧5529600像素video黄金退出0；最终HDMI会话79139退出0，真实SD BGM＋四SFX逐样本、立体声／测试音、校准／HUD／offset128帧通过，错一拍负例被检出，source_hashes与最终源一致。中途改源的旧HDMI回执不作证据。
+- README、architecture、board-demo、bringup、competition-status、test/README 已更新恢复操作和板测边界。最终基础15项会话60300退出0，包含新同步字形、完整lab、缓存／故障恢复和全帧并发写；diff检查通过。此次恢复按用户授权本地Git保存，不推送。用户下一步自行下载新bit，SW全下先验对齐／BGM／昵称长按，再验SW1图库、SW2字幕波形、显示／音频设置和图库后台加载时声音；恢复版尚未实板验收，未重跑完整14组verify入口。
+
 ## 2026-10-25 手动适配自有显示器：已构建，待实屏校准
 
 - 新证据／授权：用户确认同一板卡接其他显示器正常，只有自己的屏横向环绕；明确要求软件人工对齐。覆盖下方旧的“停止／只测官方／不改代码”边界。本轮不再追问品牌，不再交付 A/B/C。

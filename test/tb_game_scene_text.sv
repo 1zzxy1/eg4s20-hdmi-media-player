@@ -32,12 +32,12 @@ module tb_game_scene_text;
                 16:expected="K2/K3 EDIT K4 NEXT K1 BACK      ";
                 17:expected="                                ";
                 18:expected="KEY3 LEFT KEY1 RIGHT KEY2 JUMP  ";
-                19:expected="SW4 RUN FIRE - SW1 MUTE         ";
+                19:expected="SW4 RUN FIRE - KEY4 CONFIRM     ";
                 20:expected="KEEP MOVING JUMP THE GAP        ";
                 21:expected="THE FINISH IS NEAR              ";
                 22:expected="DEBUG TF BMP ASSET PREVIEW      ";
-                23:expected="SOUND ON  SW1 MUTES             ";
-                24:expected="SOUND OFF SW1 UNMUTES           ";
+                23:expected="SOUND ON - SW4 LOBBY AUDIO      ";
+                24:expected="SOUND OFF - SW4 LOBBY AUDIO     ";
                 26:expected="EVENT 0  WORLD X 000            ";
                 default:expected={32{8'h20}};
             endcase

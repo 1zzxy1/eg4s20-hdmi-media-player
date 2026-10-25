@@ -16,10 +16,11 @@ def main():
         ('tb_game_alignment', 1, 1, False),
         ('tb_game_alignment', 639, 639, False),
         ('tb_game_alignment_controls', 0, 0, False),
+        ('tb_game_alignment_digits', 0, 0, False),
     ]:
         label = f'{name}_{actual}_{sink}'
         exe = out / (label + '.vvp')
-        params = [] if name.endswith('controls') else [
+        params = [] if name != 'tb_game_alignment' else [
             f'-P{name}.ACTUAL_OFFSET={actual}', f'-P{name}.SINK_SHIFT={sink}']
         p = subprocess.run(['iverilog', '-g2012', '-Isrc/game', '-s', name,
                             *params, '-o', str(exe), *map(str, sources),

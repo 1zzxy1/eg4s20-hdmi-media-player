@@ -138,9 +138,10 @@ def main():
     assert not errors,errors
     critical=[l for l in (synlog+phylog).splitlines() if 'CRITICAL-WARNING' in l]
     known=[l for l in critical if
-           ('PHY-7002 ' in l and 'Instance u_sdram/sdram location ' in l) or
+           ('PHY-7002 ' in l and any('Instance '+path+'/sdram location ' in l
+                                    for path in ['u_sdram','u_gallery/u_sdram'])) or
            ('PHY-5079 ' in l and 'Marked 1 clock net(s)' in l and
-            re.search(r'mem_shift\s*\|[^\n]*0/1[^\n]*u_sdram/u2_ram/SDRAM_CLK',phylog))]
+            re.search(r'(?:mem_shift|mem_clk_shift)\s*\|[^\n]*0/1[^\n]*(?:u_gallery/)?u_sdram/u2_ram/SDRAM_CLK',phylog))]
     assert len(known)==len(critical),[l for l in critical if l not in known]
     assert (phy/'.bitgen.end.f').exists() and (phy/'media_player.bit').exists(),'No successful GUI bitgen receipt'
     hold_repair=repair_hold(args.td,phy)

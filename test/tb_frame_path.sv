@@ -2,7 +2,9 @@
 // MODEL-ONLY: memory array is a controller App-interface model, not encrypted RTL.
 // Real course asynchronous FIFO RTL, DMA, video timing and video_delay are used.
 module tb_frame_path #(
-    parameter integer DISPLAY_SLOT = 2
+    parameter integer DISPLAY_SLOT = 2,
+    parameter integer ALIGN_OFFSET = -1,
+    parameter integer FREE_RASTER = 0
 );
     localparam integer FRAME_WORDS = 307200;
     localparam integer BACKGROUND_SLOT = (DISPLAY_SLOT + 1) % 4;
@@ -55,6 +57,17 @@ module tb_frame_path #(
     reg [3:0] latency=0;reg [31:0] pipe[0:3];
     reg [1:0] ack_sync=0;
     reg read_started=0;
+    reg re_d=0,read_pending=0;
+    wire dma_request=FREE_RASTER?read_pending:re;
+    wire [9:0] offset_value=ALIGN_OFFSET<0?0:ALIGN_OFFSET;
+    always @(posedge pc)begin
+        if(vrst)begin re_d<=0;read_pending<=0;end
+        else begin
+            re_d<=re;
+            if(re&&!re_d)read_pending<=1;
+            else if(ack_sync[1])read_pending<=0;
+        end
+    end
     integer memcycles=0,writes=0,reads=0,pixels=0,i,j,cy=0,expected;
 `ifdef REAL_SDRAM
     reg shifted=0;
@@ -68,20 +81,21 @@ module tb_frame_path #(
     assign refresh=busy;assign initialized=!rst;
     assign returned=latency[3];assign returned_data=pipe[3];
 `endif
-    frame_read_write #(.BURST_SIZE(128)) dut(.rst(rst),.mem_clk(mc),.Sdr_init_done(initialized),
+    frame_read_write #(.BURST_SIZE(128),.ALIGNMENT(ALIGN_OFFSET>=0)) dut(.rst(rst),.mem_clk(mc),.Sdr_init_done(initialized),
         .Sdr_init_ref_vld(refresh),.Sdr_busy(busy),.App_rd_en(app_r),.App_rd_addr(raddr),
-        .Sdr_rd_en(returned),.Sdr_rd_dout(returned_data),.read_clk(pc),.read_req(re),.read_req_ack(ra),
+        .Sdr_rd_en(returned),.Sdr_rd_dout(returned_data),.read_clk(pc),.read_req(dma_request),.read_req_ack(ra),
         .read_finish(rfinish),.read_addr_0(21'd0),.read_addr_1(21'd307200),.read_addr_2(21'd614400),.read_addr_3(21'd921600),
         .read_addr_index(read_bank_select),.read_len(21'd307200),.read_en(read_en),.read_data(read_data),
         .App_wr_en(app_w),.App_wr_addr(waddr),.App_wr_din(app_data),.App_wr_dm(mask),
         .write_clk(wc),.write_req(wreq),.write_req_ack(wa),.write_finish(wfinish),
         .write_addr_0(21'd0),.write_addr_1(21'd307200),.write_addr_2(21'd614400),.write_addr_3(21'd921600),
-        .write_addr_index(write_bank_select),.write_len(21'd307200),.write_en(we),.write_data(wd),.write_ready(wready));
+        .write_addr_index(write_bank_select),.write_len(21'd307200),.write_en(we),.write_data(wd),.write_ready(wready),
+        .alignment_offset(offset_value));
     always @(posedge pc) begin
         if(vrst) begin ack_sync<=0;read_started<=0;end
         else begin ack_sync<={ack_sync[0],ra};if(ack_sync[1]) read_started<=1;end
     end
-    video_timing_data timing(pc,vrst,re,ack_sync[1],hs,vs,de);
+    video_timing_data timing(pc,vrst,re,FREE_RASTER?re:ack_sync[1],hs,vs,de);
     video_delay delay(pc,vrst,read_en,read_data[31:8],hs,vs,de,ho,vo,dout,pixel);
     always @(posedge mc) begin
         memcycles=memcycles+1;
@@ -103,10 +117,10 @@ module tb_frame_path #(
         #1;
         if(!vrst && read_started && dout) begin
 `ifdef BMP_SOURCE
-            expected=pixels/640<240 ? (pixels%640<320?24'hff0000:24'h00ff00) :
-                (pixels%640<320?24'h0000ff:24'hffffff);
+            expected=pixels/640<240 ? ((pixels%640+offset_value)%640<320?24'hff0000:24'h00ff00) :
+                ((pixels%640+offset_value)%640<320?24'h0000ff:24'hffffff);
 `else
-            expected=((479-pixels/640)*640+pixels%640)^24'h567890^(24'h010101*DISPLAY_SLOT);
+            expected=((479-pixels/640)*640+(pixels%640+offset_value)%640)^24'h567890^(24'h010101*DISPLAY_SLOT);
 `endif
             if(pixel!==expected[23:0]) $fatal(1,"FIFO/video pixel %0d got %h expected %h",pixels,pixel,expected[23:0]);
             pixels=pixels+1;

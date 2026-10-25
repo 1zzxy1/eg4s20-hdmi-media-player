@@ -1,6 +1,6 @@
 # 下载、图片卡与 Flash 固化
 
-用户已反馈上一版游戏可玩。2026-10-24 已将新版 V4 镜像写入用户本次插入的约 8GB SD，完成前 65MiB 备份、整段逐字节回读及六 BMP／音频包文件校验，并安全弹出；回执在 `build/media/sd-write-20261024-135832/receipt.json`。2026-10-25本轮为精简游戏稳定性候选，恢复原厂HDMI完整EDID／DDC接法，暂停首屏实验室；素材保持V4，不用重写已校验的卡。新版板卡由用户自行烧录，下载／固化和实板效果尚未确认。按键与新版本验收见 [板上操作](board-demo.md)。
+用户已实板确认人工对齐后的画面正常、BGM 无杂音、游戏可玩。当前恢复素材预览、切图／轮播、字幕、波形和设置，保持正常的 HDMI／DDC／PCM 通路；恢复版需重新构建及实板验收。2026-10-24 已写入并回读校验的 V4 SD 卡继续使用，无需重写。本次由用户自行下载板卡，操作见 [板上说明](board-demo.md)。
 
 ## 准备文件
 
@@ -13,13 +13,13 @@ python script/build_td_gui.py
 python script/make_sd_image.py build/media/game-audio-new.img assets/game/atlas.bmp assets/game/preview_1.bmp assets/game/preview_2.bmp assets/game/preview_3.bmp assets/game/preview_4.bmp assets/game/preview_5.bmp --audio-pack assets/audio/AUDIO.PAK
 ```
 
-当前可直接使用已生成的 `build/media/game-audio-v4.img`，65MiB，含六张像素风混合尺寸 BMP、结束标记和 24 轨音频包。SHA-256 为 `37553923c0d73f69646ad592af4fe4b0d8b39c067435cc62a6ba29f87f03f637`。首图仍为 640×480，后五张为 320×240、800×600、641×479、640×480、960×720。`assets/audio/AUDIO.PAK` 未变，不必重新下载；来源见其 manifest。上面的命令用于重新打包，工具拒绝覆盖已有文件，旧 V3 镜像保留。首张带签名的 atlas 是游戏启动必需的。以下为保留的媒体素材工具用法，当前精简位流不支持普通图片浏览，不能用这些图片替换首张游戏图集：
+当前可直接使用已生成的 `build/media/game-audio-v4.img`，65MiB，含六张像素风混合尺寸 BMP、结束标记和 24 轨音频包。SHA-256 为 `37553923c0d73f69646ad592af4fe4b0d8b39c067435cc62a6ba29f87f03f637`。首图仍为 640×480，后五张为 320×240、800×600、641×479、640×480、960×720。`assets/audio/AUDIO.PAK` 未变，不必重新下载；来源见其 manifest。上面的命令用于重新打包，工具拒绝覆盖已有文件，旧 V3 镜像保留。首张带签名的 atlas 是游戏启动必需的。图库支持后续素材浏览；首张仍必须保留带签名的游戏图集，不能直接用下方纯图片示例替换游戏镜像：
 
 ```powershell
 python script/make_sd_image.py build/media/custom.img a.bmp b.bmp c.bmp d.bmp e.bmp f.bmp
 ```
 
-打包器可传1..64张正高度、24-bit非压缩BMP，尺寸1..1920×1..1440；总量受镜像容量限制。当前硬件只读取LBA2337的首张640×480带签名图集，不再扫描其他图片。生成的 65MiB 镜像含 MBR、FAT16、连续图片簇及结束标记。`--count N` 仅用于自动生成测试图，`--native` 生成 640×480 测试图。
+打包器可传1..64张正高度、24-bit非压缩BMP，尺寸1..1920×1..1440；总量受镜像容量限制。当前硬件优先读取 LBA2337 的首张 640×480 带签名图集，验证后扫描其余图片并向 SDRAM 四槽预取。生成的 65MiB 镜像含 MBR、FAT16、连续图片簇及结束标记。`--count N` 仅用于自动生成测试图，`--native` 生成 640×480 测试图。
 
 音频不是在 FPGA 中解码 MP3：工具离线转为 48kHz、16-bit 单声道 PCM 并打成扇区对齐包。镜像在 LBA1 写入带绝对位置的音频目录，因此**不能仅复制 `AUDIO.PAK` 到旧卡，也不能把 `.img` 复制为卡内文件**。旧 `game-cache.img` 没有音频包；本次卡已经于 2026-10-24 更新到 V4。后续确需重写时重新核对当前目标，不沿用历史盘号。新镜像独立检查了 MBR/BPB、两份 FAT、八个连续文件、LBA1 目录、24 轨 PCM 与源文件哈希。
 
@@ -45,7 +45,7 @@ python script/check_deployment.py --image build/media/game-audio-v5-candidate.im
 2. 把新镜像作为整盘镜像写入 SDHC 卡并回读校验，不能把 `.img` 当普通文件复制；执行前核对物理盘号和卡内数据可清空。2026-10-24 本次卡已完成，可直接插板测试；Windows 显示约 64MiB 分区是镜像布局，实板测试前不要重新格式化或扩容。
 3. 打开 `prj/media_player.al`，用 TD Programmer / BitWriter 刷新 JTAG 链，确认 EG4S20BG256。
 4. 选择 `prj/media_player_Runs/phy_1/media_player.bit`，执行 FPGA SRAM 配置。RUN 是编译，Program 才是下载。
-5. 所有SW下拨，等待LED1 SD初始化及LED2图集完成，随后应播放BGM。首屏SW2为独立1kHz测试音，SW1为全局静音。KEY4进入昵称，松开后长按一秒直接开始；图集等待期间保留开始请求。游戏KEY3左、KEY2跳、KEY1右、SW4跑步／火球。进入游戏先松开KEY1–3。SW3暂空，旧素材／波形／显示实验室已停用。按[板上测试](board-demo.md)验收实际音乐、画面环绕和进入游戏；当前未确认实板故障已恢复。
+5. SW 全下，等待 LED1（SD 初始化）和 LED2（图集完成），先看对齐、听 BGM。KEY4 进入昵称，松开后长按一秒开始；游戏 KEY3 左、KEY2 跳、KEY1 右、SW4 跑／火球。首屏 SW1 素材、SW2 字幕／波形、SW1＋SW3 显示设置、SW4 音频设置；SW3 单独为校准。完整操作和验收顺序见 [板上测试](board-demo.md)。
 6. JTAG SRAM 配置断电丢失，CONFIG1 也可能触发重新配置；它不能代替固化验收。
 
 如下载器未显示，先查看当前 Windows 设备状态，不沿用历史驱动报错结论；`.ai/handoff.md` 保留此前代码 52 排查供追溯。
@@ -64,10 +64,11 @@ python script/check_deployment.py --image build/media/game-audio-v5-candidate.im
 
 `BIT-8123` 表示未约束 IO，检查实际 RUN 的 ADCList/SDCList 是否包含正式约束。当前 `build_td_gui.py` 已实际验证约束传递及 29 个 IO 位置；不要打开历史空约束工程或允许未约束 IO 来绕过。
 
-此前PHY-7002来自SDRAM中间ECO位置重放置，PHY-5079对应SDRAM单负载转发时钟；本版取消SDRAM实例，这两条警告不再出现。当前RUN的setup +4.053ns／hold +0.011ns，29 IO正确。板级电气与显示器兼容仍需实测，不扩大false path掩盖故障。
+恢复图库后再次实例化 SDRAM，可能出现原有 PHY-7002 ECO 位置及 PHY-5079 单负载转发时钟提示。脚本只接受已核对的精确实例警告，其他 critical 仍须检查；以新构建的资源、setup／hold 和配套回执为准，不扩大 false path。
+
 # 游戏版补充
 
-当前下载入口仍为 `prj/media_player.al` 和 `prj/media_player_Runs/phy_1/media_player.bit`；TF 卡应使用 `build/media/game-audio-v4.img`，首图是游戏 atlas。四 KEY／SW 的新映射见 [板上演示](board-demo.md) 顶部。本版没有首屏Debug实验室；KEY1在昵称／排行返回，游戏中右移，SW1静音、SW2首屏测试音。整个系统的上电复位来自 PLL 锁定，重新加载配置或断电会重新读取图集。
+当前下载入口仍为 `prj/media_player.al` 和 `prj/media_player_Runs/phy_1/media_player.bit`；TF 卡应使用 `build/media/game-audio-v4.img`，首图是游戏 atlas。四 KEY／SW 的新映射见 [板上演示](board-demo.md) 顶部。首屏已恢复 Debug 实验室；KEY1 在昵称／排行返回、游戏中右移。SW1 素材、SW2 字幕／波形，独立测试音在 SW4 音频设置页中选择。整个系统的上电复位来自 PLL 锁定，重新加载配置或断电会重新读取图集。
 
 固化配置仍用 W25Q16（约 2MB）；排行榜用独立用户 W25X64／W25Q64（约 8MB）的两个日志扇区。这两者用途和引脚不同。先用 JTAG SRAM 下载验证画面、声音、排行榜写回，再按上方配置 Flash 流程固化，脱离下载器冷启验收。本轮生成文件不等于已完成硬件烧录。
 

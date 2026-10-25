@@ -2,7 +2,8 @@
 // One shared raster coordinate, pipelined together with pixel data and sync.
 module advanced_video #(
     parameter TEXT=1, COLOR=1, SCOPE=1, TRANSITION=1, DIRECT_CONTROLS=0, LAB_UI=0,
-    parameter CLOCK_HZ=25_000_000, DEBOUNCE=500_000, LONG_PRESS=25_000_000
+    parameter CLOCK_HZ=25_000_000, DEBOUNCE=500_000, LONG_PRESS=25_000_000,
+    parameter ALIGNMENT=0
 )(
     input wire clk,rst,hs,vs,de,input wire [23:0] rgb,
     input wire image_valid,key_menu,overlay_sw,wave_sw,
@@ -16,11 +17,14 @@ module advanced_video #(
     input wire audio_enabled,
     input wire [2:0] cache_count,
     input wire [6:0] image_index,image_count,
-    input wire [1:0] control_contrast,control_transition
+    input wire [1:0] control_contrast,control_transition,
+    input wire [9:0] alignment_offset
 );
     reg vs_d,de_d;reg [9:0] x,y;
     wire frame_tick=vs&&!vs_d;
-    wire [9:0] px=de_d?x:10'd0;
+    wire [9:0] raster_x=de_d?x:10'd0;
+    wire [10:0] sum_x={1'b0,raster_x}+alignment_offset;
+    wire [9:0] px=ALIGNMENT?(sum_x>=640?sum_x-11'd640:sum_x[9:0]):raster_x;
     wire [1:0] brightness,contrast;wire overlay,wave;
     wire [15:0] timestamp;
     video_controls #(.CLOCK_HZ(CLOCK_HZ),.DEBOUNCE(DEBOUNCE),.LONG_PRESS(LONG_PRESS),.DIRECT(DIRECT_CONTROLS)) controls(clk,rst,frame_tick,key_menu,brightness_sw,overlay_sw,wave_sw,
@@ -45,18 +49,19 @@ module advanced_video #(
                 y<=0;scroll_half<=!scroll_half;
                 if(scroll_half) scroll<=scroll==895?0:scroll+1'b1;
             end else if(de_d&&!de) y<=y+1'b1;
-            x<=de?px+1'b1:10'd0;
+            x<=de?raster_x+1'b1:10'd0;
         end
     end
     function [7:0] color_adjust;
         input [7:0] c;input [1:0] b,k;
-        reg signed [11:0] v;
+        // All intermediate values fit -256..382; ten signed bits suffice.
+        reg signed [9:0] v;
         begin
-            v=$signed({1'b0,c})-12'sd128;
+            v=$signed({1'b0,c})-10'sd128;
             case(k) 1:v=v>>>1;2:v=v+(v>>>1);3:v=v<<<1;endcase
-            v=v+12'sd128;
-            case(b) 1:v=v+12'sd32;2:v=v+12'sd64;3:v=v-12'sd32;endcase
-            color_adjust = v < 12'sd0 ? 8'd0 : (v > 12'sd255 ? 8'd255 : v[7:0]);
+            v=v+10'sd128;
+            case(b) 1:v=v+10'sd32;2:v=v+10'sd64;3:v=v-10'sd32;endcase
+            color_adjust = v < 10'sd0 ? 8'd0 : (v > 10'sd255 ? 8'd255 : v[7:0]);
         end
     endfunction
     reg [23:0] adjusted;
@@ -86,9 +91,9 @@ module advanced_video #(
         end
     end
     wire signed [7:0] sample;wire [7:0] peak;wire scope_valid;
-    wire [5:0] sample_index=(x2-10'd64)>>3;
+    wire [5:0] sample_index=(x1-10'd64)>>3;
     generate if(SCOPE) begin: scope_on
-        audio_scope scope(clk,rst,frame_tick,pcm_valid,pcm,sample_index,sample,peak,scope_valid);
+        audio_scope #(.REGISTERED_READ(1)) scope(clk,rst,frame_tick,pcm_valid,pcm,sample_index,sample,peak,scope_valid);
     end else begin:scope_off
         assign sample=0;assign peak=0;assign scope_valid=0;
     end endgenerate
@@ -103,13 +108,33 @@ module advanced_video #(
     reg [2:0] glyph_row,glyph_col;
     reg text_area;
     reg [10:0] scroll_coord;
-    reg [255:0] message;
+    localparam [255:0] CAPTION="EG4S20 HDMI MULTIMEDIA PLAYER   ";
+    localparam [255:0] SCOPE_TITLE={"PCM 48KHZ - GAIN X2",{13{8'h20}}};
+    localparam [255:0] SCOPE_SPAN={"64 SAMPLES: 1.33MS",{14{8'h20}}};
+    localparam [63:0] LEVEL="LEVEL   ";
+    wire [4:0] caption_index=(scroll_coord-11'd640)>>3;
+    wire [4:0] scope_index=(x2-10'd64)>>3;
+    // The catalog has at most 64 entries. Bound the decimal arithmetic to
+    // seven input bits and share it between index and count characters.
+    function [7:0] number_pair(input [6:0] value);
+        reg [7:0] bcd;
+        integer bit_index;
+        begin
+            bcd=0;
+            for(bit_index=6;bit_index>=0;bit_index=bit_index-1)begin
+                if(bcd[3:0]>=5)bcd[3:0]=bcd[3:0]+4'd3;
+                bcd={bcd[6:0],value[bit_index]};
+            end
+            number_pair=bcd;
+        end
+    endfunction
+    wire [5:0] panel_column=(x2-10'd16)>>3;
+    wire [7:0] picture_digits=number_pair(panel_column<17?picture:total);
     always @* begin
         ch=32;glyph_row=0;glyph_col=0;text_area=0;scroll_coord={1'b0,x2}+scroll2;
-        message="EG4S20 HDMI MULTIMEDIA PLAYER   ";
         if(panel && y2>=12 && y2<20 && x2>=16 && x2<104) begin
             text_area=1;glyph_row=y2-12;glyph_col=x2[2:0];
-            case((x2-16)>>3)
+            case(panel_column)
                 0:ch="T";1:ch="I";2:ch="M";3:ch="E";4:ch=32;
                 5:ch=48+timestamp[15:12];6:ch=48+timestamp[11:8];7:ch=":";
                 8:ch=48+timestamp[7:4];9:ch=48+timestamp[3:0];
@@ -117,7 +142,7 @@ module advanced_video #(
         end
         if(panel && y2>=28 && y2<36 && x2>=16 && x2<288) begin
             text_area=1;glyph_row=y2-28;glyph_col=x2[2:0];
-            case((x2-16)>>3)
+            case(panel_column)
                 0:ch="B";1:ch=brightness==3?"-":"+";
                 2:ch=brightness==0?"0":brightness==2?"6":"3";
                 3:ch=brightness==0?"0":brightness==2?"4":"2";
@@ -133,32 +158,34 @@ module advanced_video #(
         end
         if(panel && y2>=44 && y2<52 && x2>=16 && x2<224) begin
             text_area=1;glyph_row=y2-44;glyph_col=x2[2:0];
-            case((x2-16)>>3)
+            case(panel_column)
                 0:ch="C";1:ch="A";2:ch="C";3:ch="H";4:ch="E";
                 6:ch=48+cached;7:ch="/";8:ch=48+(total<4?total:7'd4);
                 10:ch="I";11:ch="M";12:ch="G";
-                14:ch=48+picture/10;15:ch=48+picture%10;16:ch="/";
-                17:ch=48+total/10;18:ch=48+total%10;
+                14,17:ch=8'h30+{4'd0,picture_digits[7:4]};
+                15,18:ch=8'h30+{4'd0,picture_digits[3:0]};16:ch="/";
             endcase
         end
         if(caption && y2>=456 && y2<464 && scroll_coord>=640 && scroll_coord<896) begin
             text_area=1;glyph_row=y2-456;glyph_col=scroll_coord[2:0];
-            ch=message >> ((31-((scroll_coord-640)>>3))*8);
+            ch=CAPTION[{~caption_index,3'b000}+:8];
         end
         if(LAB_UI&&SCOPE&&wave&&x2>=64&&x2<576&&y2>=272&&y2<280)begin
             text_area=1;glyph_row=y2-272;glyph_col=x2[2:0];
-            message=x2<320?{"PCM 48KHZ - GAIN X2",{13{8'h20}}}:
-                {"64 SAMPLES: 1.33MS",{14{8'h20}}};
-            ch=message >> ((31-((x2-(x2<320?64:320))>>3))*8);
+            ch=x2<320?SCOPE_TITLE[{~scope_index,3'b000}+:8]:
+                SCOPE_SPAN[{~scope_index,3'b000}+:8];
         end
         if(LAB_UI&&SCOPE&&wave&&x2>=64&&x2<128&&y2>=408&&y2<416)begin
-            text_area=1;glyph_row=y2-408;glyph_col=x2[2:0];message="LEVEL                           ";
-            ch=message >> ((31-((x2-64)>>3))*8);
+            text_area=1;glyph_row=y2-408;glyph_col=x2[2:0];
+            ch=LEVEL[{~x2[5:3],3'b000}+:8];
         end
     end
     wire [4:0] glyph;
-    osd_font font(ch,glyph_row,glyph);
-    wire ink=text_area&&glyph_col<5&&glyph[4-glyph_col];
+    osd_font_sync font(clk,ch,glyph_row,glyph);
+    reg text3,hs3,vs3,de3;
+    reg [2:0] col3;
+    reg [23:0] background3;
+    wire ink=text3&&col3<5&&glyph[4-col3];
     function [23:0] half_blend;
         input [23:0] a,b;
         reg [8:0] r,g,bl;
@@ -186,10 +213,16 @@ module advanced_video #(
         end
         if(panel) composed=half_blend(composed,24'h101828);
         if(caption) composed=half_blend(composed,24'h002040);
-        if(ink) composed=24'hffffff;
     end
     always @(posedge clk or posedge rst) begin
-        if(rst) begin rgb_o<=0;hs_o<=0;vs_o<=0;de_o<=0;end
-        else begin rgb_o<=de2?composed:24'd0;hs_o<=hs2;vs_o<=vs2;de_o<=de2;end
+        if(rst) begin
+            rgb_o<=0;hs_o<=0;vs_o<=0;de_o<=0;
+            text3<=0;col3<=0;background3<=0;hs3<=0;vs3<=0;de3<=0;
+        end else begin
+            background3<=composed;text3<=text_area;col3<=glyph_col;
+            hs3<=hs2;vs3<=vs2;de3<=de2;
+            rgb_o<=de3?(ink?24'hffffff:background3):24'd0;
+            hs_o<=hs3;vs_o<=vs3;de_o<=de3;
+        end
     end
 endmodule

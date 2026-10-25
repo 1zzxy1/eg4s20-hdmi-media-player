@@ -1,6 +1,7 @@
 // Synchronous character ROM replaces the wide menu string mux.
 // RGB and sync take the same two clocks; Debug leaves its preview unobstructed.
-module game_menu_video(input wire clk,rst,hs,vs,de,input wire [23:0] rgb,
+module game_menu_video #(parameter ALIGNMENT=0)(input wire clk,rst,hs,vs,de,input wire [23:0] rgb,
+    input wire [9:0] alignment_offset,
     input wire active,debug_mode,media_fullscreen,calibration,
     input wire [2:0] page,selection,
     input wire view_narrow,palette_mode,osd_enable,audio_enabled,test_tone,
@@ -14,11 +15,13 @@ module game_menu_video(input wire clk,rst,hs,vs,de,input wire [23:0] rgb,
     output reg hs_o,vs_o,de_o,output reg [23:0] rgb_o);
     reg vd,dd;
     reg [9:0] sx,sy;
-    wire [9:0] x=dd?sx:10'd0;
+    wire [9:0] raster_x=dd?sx:10'd0;
+    wire [10:0] sum_x={1'b0,raster_x}+alignment_offset;
+    wire [9:0] x=ALIGNMENT?(sum_x>=640?sum_x-11'd640:sum_x[9:0]):raster_x;
     always @(posedge clk or posedge rst)
         if(rst) begin vd<=0;dd<=0;sx<=0;sy<=0;end
         else begin
-            vd<=vs;dd<=de;sx<=de?x+1'b1:0;
+            vd<=vs;dd<=de;sx<=de?raster_x+1'b1:0;
             if(vs&&!vd)sy<=0;else if(dd&&!de)sy<=sy+1'b1;
         end
     function [255:0] message(input integer id);
@@ -80,6 +83,19 @@ module game_menu_video(input wire clk,rst,hs,vs,de,input wire [23:0] rgb,
     function [7:0] digit(input [3:0] value);
         begin digit=value<10?"0"+value:"A"+value-10;end
     endfunction
+    function [7:0] number_pair(input [6:0] value);
+        reg [7:0] bcd;
+        integer bit_index;
+        begin
+            bcd=0;
+            for(bit_index=6;bit_index>=0;bit_index=bit_index-1)begin
+                if(bcd[3:0]>=5)bcd[3:0]=bcd[3:0]+4'd3;
+                bcd={bcd[6:0],value[bit_index]};
+            end
+            number_pair=bcd;
+        end
+    endfunction
+    wire [7:0] picture_digits=number_pair(column<7?image_index:image_count);
     always @* begin
         msg=0;panel=0;text_on=0;selected=0;row=0;
         dynamic_char=32;dynamic_on=0;
@@ -157,8 +173,8 @@ module game_menu_video(input wire clk,rst,hs,vs,de,input wire [23:0] rgb,
                         if(column==4||column==5||column==7||column==8||column==16)begin
                             dynamic_on=1;
                             case(column)
-                                4:dynamic_char=digit(image_index/10);5:dynamic_char=digit(image_index%10);
-                                7:dynamic_char=digit(image_count/10);8:dynamic_char=digit(image_count%10);
+                                4,7:dynamic_char=digit(picture_digits[7:4]);
+                                5,8:dynamic_char=digit(picture_digits[3:0]);
                                 16:dynamic_char=digit({1'b0,cache_count});
                             endcase
                         end

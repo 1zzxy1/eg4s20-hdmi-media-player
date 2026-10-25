@@ -1,6 +1,7 @@
 // Stability build: load the native atlas directly into texture RAM once.
 // Publication depends on the complete BMP and its signature, not SDRAM DMA.
 module game_asset_loader #(
+    parameter EXTERNAL_DECODER=0,
     parameter RETRY_CYCLES=2_500_000,
     // V4 FAT16 layout: partition + boot + two FATs + root directory.
     parameter [31:0] ATLAS_LBA=32'd2337
@@ -10,7 +11,10 @@ module game_asset_loader #(
     output wire [23:0] asset_rgb,
     output wire req,output wire [31:0] addr,
     input wire [7:0] data,input wire valid,sector_end,
-    output wire [3:0] status,output reg failed
+    output wire [3:0] status,output reg failed,
+    output wire decoder_start,
+    input wire decoder_idle,decoder_write_req,decoder_we,decoder_done,
+    input wire [23:0] decoder_rgb,input wire [3:0] decoder_status
 );
     (* ASYNC_REG="TRUE" *) reg [1:0] ready_sync;
     reg started,start;
@@ -19,6 +23,7 @@ module game_asset_loader #(
     wire [3:0] error_code;
     assign asset_begin=write_req;
     assign asset_commit=done;
+    assign decoder_start=start;
     always @(posedge clk or posedge rst)
         if(rst)begin
             ready_sync<=0;started<=0;start<=0;retry_count<=0;failed<=0;
@@ -33,6 +38,16 @@ module game_asset_loader #(
                 end else retry_count<=retry_count+1'b1;
             end else retry_count<=0;
         end
+    generate if(EXTERNAL_DECODER)begin:shared_decoder
+        assign idle=decoder_idle;
+        assign write_req=decoder_write_req;
+        assign asset_we=decoder_we;
+        assign asset_rgb=decoder_rgb;
+        assign done=decoder_done;
+        assign status=decoder_status;
+        assign req=1'b0;
+        assign addr=ATLAS_LBA;
+    end else begin:local_decoder
     bmp_sector_player #(.ENABLE_SCALE(0)) decoder(
         .clk(clk),.rst(rst),.sd_init_done(initialized),
         .scan_start(1'b0),.scan_start_sector(ATLAS_LBA),.scan_max_sector(ATLAS_LBA),
@@ -43,4 +58,5 @@ module game_asset_loader #(
         .bmp_data_wr_en(asset_we),.bmp_data(asset_rgb),.load_done(done),.error_code(error_code),
         .sd_sec_read(req),.sd_sec_read_addr(addr),.sd_sec_read_data(data),
         .sd_sec_read_data_valid(valid),.sd_sec_read_end(sector_end));
+    end endgenerate
 endmodule

@@ -16,7 +16,7 @@ module tb_game_menu_video;
     reg [6:0] image_index=2,image_count=6;
     reg [2:0] cache_count=4;
     wire hs_o,vs_o,de_o;wire [23:0] rgb_o;
-    game_menu_video dut(.*);
+    game_menu_video dut(.alignment_offset(10'd0),.*);
     integer px,py,pixels=0,ox,oy,mode=0,outfile,white_count=0;
     reg [1:0] hp=0,vp=0,dp=0;
     function [23:0] base_color(input integer x,y);

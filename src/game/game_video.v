@@ -42,7 +42,8 @@ module game_video #(
         (aligned_sum>=640?aligned_sum-11'd640:aligned_sum[9:0]):raster_x;
     // floor(x*256/640), using a 2/5 phase accumulator, with no divider.
     // Both logical view widths fill all 640 output columns.
-    wire [9:0] request_lx=view_narrow?{2'b0,scale_x}:request_px>>1;
+    wire [9:0] request_lx=view_narrow?
+        (ALIGNMENT?({1'b0,request_px}*11'd2)/11'd5:{2'b0,scale_x}):request_px>>1;
     wire [8:0] request_ly=scan_y>>1;
     wire [11:0] request_wx=camera_x+request_lx;
     wire death_scene=state==3&&(death_active===1'b1);
@@ -431,7 +432,7 @@ module game_video #(
     wire [23:0] alignment_rgb;
     reg [23:0] alignment_rgb1;
     generate if(ALIGNMENT)begin:alignment_pattern
-        game_alignment_pattern pattern(.x(px),.y(y),.offset(alignment_offset),.rgb(alignment_rgb));
+        game_alignment_pattern pattern(.clk(clk),.rst(rst),.x(request_px),.y(scan_y),.offset(alignment_offset),.rgb(alignment_rgb));
     end else begin:no_alignment
         assign alignment_rgb=24'd0;
     end endgenerate

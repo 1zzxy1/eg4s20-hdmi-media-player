@@ -2,7 +2,7 @@
 `include "game_assets.vh"
 // Actual V4 image bytes -> BMP decoder -> texture cache, with a truncated
 // sector and an invalid signature before the successful retry.
-module tb_game_asset_loader;
+module tb_game_asset_loader #(parameter SHARED=0);
     reg clk=0,pclk=0,rst=1;
     always #10 clk=~clk;
     always #20 pclk=~pclk;
@@ -13,11 +13,28 @@ module tb_game_asset_loader;
     reg [7:0] data=0;
     reg valid=0,sector_end=0;
     reg [14:0] ba=0,sa=0;
+    wire gallery_write;
+    wire [6:0] image_count;
+    generate if(SHARED)begin:shared
+        sd_card_bmp #(.CLK_FREQ_HZ(50_000_000),.EXTERNAL_CARD(1),.BOOT_ATLAS(1),
+            .ATLAS_RETRY_CYCLES(128),.SCAN_START_SECTOR(2048),.SCAN_MAX_SECTOR(131071)) loader(
+            .clk(clk),.rst(rst),.key_next(1'b1),.key_auto(1'b1),.key_previous(1'b1),
+            .auto_enable(1'b0),.bmp_width(16'd640),.bmp_height(16'd480),
+            .write_finish_toggle(1'b0),.display_ack_toggle(1'b0),
+            .write_req(gallery_write),.write_req_ack(1'b0),.write_ready(1'b1),.image_count(image_count),
+            .asset_begin(begin_asset),.asset_we(we),.asset_commit(commit),.asset_rgb(rgb),
+            .native_assets_ready(loaded),.native_failed(failed),.state_code(status),
+            .audio_req(1'b0),.audio_addr(32'd0),.SD_MISO(1'b1),
+            .card_initialized(!rst),.card_read_req(req),.card_read_addr(addr),
+            .card_read_data(data),.card_read_valid(valid),.card_read_end(sector_end));
+    end else begin:native
+    assign gallery_write=0;assign image_count=0;
     game_asset_loader #(.RETRY_CYCLES(128)) loader(
         .clk(clk),.rst(rst),.initialized(!rst),.assets_ready(loaded),
         .asset_begin(begin_asset),.asset_we(we),.asset_commit(commit),.asset_rgb(rgb),
         .req(req),.addr(addr),.data(data),.valid(valid),.sector_end(sector_end),
         .status(status),.failed(failed));
+    end endgenerate
     game_texture_cache cache(clk,rst,begin_asset,we,rgb,commit,pclk,rst,ba,sa,bi,si,loaded);
     integer image_fd,rc,count=0,sectors=0,begins=0,commits=0,pixels=0;
     integer attempts=0,target_bytes=512,at=0;
@@ -47,7 +64,7 @@ module tb_game_asset_loader;
         if(!rst)begin
             if(wait_low)begin if(!req)wait_low<=0;end
             else if(!busy&&req)begin
-                if(addr==ATLAS_LBA)begin
+                if(addr==ATLAS_LBA&&!loaded)begin
                     attempts=attempts+1;
                     if(attempts>3)$fatal(1,"atlas retry failed status=%h",status);
                     $display("ATLAS attempt=%0d at %0t",attempts,$time);
@@ -55,7 +72,7 @@ module tb_game_asset_loader;
                 rc=$fseek(image_fd,addr*512,0);rc=$fread(sector,image_fd);
                 if(rc!=512)$fatal(1,"short sector");
                 // The top-row signature lies in the last source row.
-                if(attempts==2&&addr==ATLAS_LBA+1797)sector[54]=sector[54]^8'h01;
+                if(!loaded&&attempts==2&&addr==ATLAS_LBA+1797)sector[54]=sector[54]^8'h01;
                 target_bytes=attempts==1?128:512;
                 busy<=1;count<=0;
             end else if(busy)begin
@@ -97,8 +114,13 @@ module tb_game_asset_loader;
             @(negedge pclk);
         end
         at=sectors;repeat(1000)@(negedge clk);
-        if(req||sectors!=at||failed)$fatal(1,"loader did not stop after publication");
-        $display("PASS native atlas loader: V4 bytes, truncated-sector retry, signature retry, all 21760 texels, no SDRAM or subsequent gallery reads");
+        if(SHARED)begin
+            wait(gallery_write);repeat(10)@(negedge clk);
+            if(image_count!=6||begins!=2||commits!=2||we||failed)
+                $fatal(1,"shared decoder did not hand off cleanly to six-image gallery");
+        end else if(req||sectors!=at||failed)$fatal(1,"loader did not stop after publication");
+        $display("PASS atlas loader: V4 bytes, truncated-sector retry, signature retry, all 21760 texels independent of SDRAM");
+        if(SHARED)$display("PASS shared atlas decoder: native retry/signature first, six-image catalog next, game textures remain locked");
         $finish;
     end
     initial begin #600000000;$fatal(1,"native atlas timeout");end

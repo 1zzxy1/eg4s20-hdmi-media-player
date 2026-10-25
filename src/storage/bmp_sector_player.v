@@ -29,7 +29,11 @@ module bmp_sector_player #(
     reg [7:0] byte_q;
     reg [15:0] magic, planes, bpp;
     reg [31:0] length, offset, dib, width, height, compression;
-    reg [31:0] row_stride, required_size, row_base, byte_ptr;
+    // Accepted geometry is at most 1920*1440*3 + 4096 < 2**23.
+    // Retain full-width header validation, but bound pixel address arithmetic.
+    reg [12:0] row_stride;
+    reg [31:0] required_size;
+    reg [22:0] row_base, byte_ptr;
     reg [10:0] dx, dy;
     reg [12:0] x_acc, y_acc;
     reg [1:0] channel;

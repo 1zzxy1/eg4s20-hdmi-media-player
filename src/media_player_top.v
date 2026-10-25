@@ -1,17 +1,18 @@
-// Stability build: native atlas -> texture RAM -> game -> legacy HDMI core.
+// Stable game/HDMI path with an independent, optional lobby multimedia lab.
 module media_player_top(
     input wire clk,input wire [3:0] keys_n,input wire [3:0] switches,
     output wire [3:0] led,
     output wire HDMI_CLK_P,HDMI_D0_P,HDMI_D1_P,HDMI_D2_P,HDMI_DDC_SCL,inout wire HDMI_DDC_SDA,
     output wire sd_ncs,sd_dclk,sd_mosi,input wire sd_miso,
     output wire flash_cs_n,flash_sck,flash_mosi,input wire flash_miso,output wire flash_wp_n,flash_hold_n);
-    wire sd_clk,pix_clk,serial_clk,sys_lock,video_lock,arst,rst_sd,rst_pix;
+    wire sd_clk,mem_clk,mem_clk_shift,pix_clk,serial_clk,sys_lock,video_lock,arst,rst_sd,rst_mem,rst_pix;
     sys_pll u_sys(.refclk(clk),.reset(1'b0),.locked(sys_lock),
-        .clk0_out(sd_clk),.clk1_out(),.clk2_out());
+        .clk0_out(sd_clk),.clk1_out(mem_clk),.clk2_out(mem_clk_shift));
     video_pll u_vid(.refclk(clk),.reset(1'b0),.locked(video_lock),
         .clk0_out(pix_clk),.clk1_out(serial_clk));
     game_boot_reset u_boot(.clk(sd_clk),.locked(sys_lock&&video_lock),.arst(arst));
     reset_sync u_rsd(sd_clk,arst,rst_sd);
+    reset_sync u_rmem(mem_clk,arst,rst_mem);
     reset_sync u_rpix(pix_clk,arst,rst_pix);
     wire frame_tick,held_left,held_right,jump_hold,held_run,held_down;
     wire left_press,right_press,jump_press,jump_short,jump_long,back_press,sound_toggle;
@@ -20,19 +21,35 @@ module media_player_top(
     wire alignment_active,alignment_block;
     wire [9:0] alignment_offset;
     game_display_alignment u_alignment(.clk(pix_clk),.rst(rst_pix),.frame_tick(frame_tick),
-        .keys_n(keys_n),.switches(switches),.active(alignment_active),
+        .keys_n(keys_n),.switches({1'b0,(switches[2]&&!switches[0]&&!switches[3]),2'b00}),.active(alignment_active),
         .block_controls(alignment_block),.offset(alignment_offset));
-    wire menu_active=alignment_block,debug_mode=1'b0,media_fullscreen=1'b0,osd_enable=1'b0;
-    wire view_narrow=1'b0,palette_mode=1'b0,reset_game=1'b0,scores_request=1'b0;
-    wire profile_request=jump_press&&game_state==0&&!alignment_block;
-    wire audio_enabled=!frame_switches[0];
-    wire test_tone=game_state==0&&frame_switches[1];
-    wire audition=1'b0;
-    wire [4:0] audition_id=5'd0;
-    wire [1:0] master_volume=2'd3,bgm_volume=2'd2,sfx_volume=2'd3;
+    wire lab_active,debug_mode,media_fullscreen,osd_enable,calibration;
+    wire menu_active=lab_active||alignment_block;
+    wire view_narrow,palette_mode,reset_game,scores_request,profile_request;
+    wire audio_enabled,test_tone,audition;
+    wire [4:0] audition_id;
+    wire [1:0] master_volume,bgm_volume,sfx_volume,brightness,display_contrast,display_transition;
+    wire [2:0] menu_page,menu_selection;
+    wire auto_action,next_action,previous_action;
+    wire auto_key_n,next_key_n,previous_key_n;
+    game_menu u_menu(.clk(pix_clk),.rst(rst_pix),.frame_tick(frame_tick),.game_state(game_state),
+        .switches(alignment_block?4'd0:{frame_switches[3],frame_switches[2]&&frame_switches[0],frame_switches[1:0]}),
+        .back_press(back_press),.left_press(left_press),.right_press(right_press),
+        .confirm(jump_press),.confirm_long(jump_long),.active(lab_active),.debug_mode(debug_mode),
+        .page(menu_page),.selection(menu_selection),.view_narrow(view_narrow),.palette_mode(palette_mode),
+        .osd_enable(osd_enable),.calibration(calibration),.audio_enabled(audio_enabled),.test_tone(test_tone),
+        .brightness(brightness),.contrast(display_contrast),.transition_mode(display_transition),
+        .master_volume(master_volume),.bgm_volume(bgm_volume),.sfx_volume(sfx_volume),
+        .media_fullscreen(media_fullscreen),.auto_action(auto_action),.next_action(next_action),
+        .previous_action(previous_action),.reset_game(reset_game),.profile_request(profile_request),
+        .scores_request(scores_request),.audition(audition),.audition_id(audition_id));
+    menu_media_controls #(.SHORT_CYCLES(1_250_000)) u_media_controls(.clk(pix_clk),.rst(rst_pix),
+        .auto_action(auto_action),.next_action(next_action),.previous_action(previous_action),
+        .effect_action(1'b0),.contrast_action(1'b0),.auto_key_n(auto_key_n),
+        .next_key_n(next_key_n),.previous_key_n(previous_key_n));
     game_inputs u_in(.clk(pix_clk),.rst(rst_pix),.frame_tick(frame_tick),
         .keys_n(alignment_block?4'hf:keys_n),.switches(switches),
-        .gameplay_active(game_state==2||game_state==6||game_state==7),.debug_mode(1'b0),
+        .gameplay_active(game_state==2||game_state==6||game_state==7),.debug_mode(menu_active),
         .held_left(held_left),.held_right(held_right),.jump_hold(jump_hold),.held_run(held_run),
         .held_down(held_down),.left_press(left_press),.right_press(right_press),
         .jump_press(jump_press),.jump_short(jump_short),.jump_long(jump_long),
@@ -41,23 +58,18 @@ module media_player_top(
     wire sd_audio_req,sd_audio_valid,sd_audio_end,sd_audio_initialized;
     wire [31:0] sd_audio_addr;
     wire [7:0] sd_audio_data;
-    wire asset_begin,asset_we,asset_commit,asset_req,asset_valid,asset_end,asset_failed,assets_loaded;
+    wire asset_begin,asset_we,asset_commit,asset_failed,assets_loaded;
     wire [23:0] asset_rgb;
-    wire [31:0] asset_addr;
-    wire [7:0] asset_data;
-    wire [3:0] asset_status;
-    game_asset_loader u_assets(.clk(sd_clk),.rst(rst_sd),.initialized(sd_audio_initialized),
-        .assets_ready(assets_loaded),.asset_begin(asset_begin),.asset_we(asset_we),
-        .asset_commit(asset_commit),.asset_rgb(asset_rgb),
-        .req(asset_req),.addr(asset_addr),.data(asset_data),.valid(asset_valid),
-        .sector_end(asset_end),.status(asset_status),.failed(asset_failed));
     wire card_req,card_valid,card_end;
     wire [31:0] card_addr;
     wire [7:0] card_data;
+    wire gallery_req,gallery_valid,gallery_end;
+    wire [31:0] gallery_addr;
+    wire [7:0] gallery_data;
     sd_sector_arbiter u_sector_share(.clk(sd_clk),.rst(rst_sd),.initialized(sd_audio_initialized),
-        .bmp_req(asset_req),.bmp_addr(asset_addr),.audio_req(sd_audio_req),.audio_addr(sd_audio_addr),
+        .bmp_req(gallery_req),.bmp_addr(gallery_addr),.audio_req(sd_audio_req),.audio_addr(sd_audio_addr),
         .sd_req(card_req),.sd_addr(card_addr),.sd_data(card_data),.sd_valid(card_valid),.sd_end(card_end),
-        .bmp_data(asset_data),.bmp_valid(asset_valid),.bmp_end(asset_end),
+        .bmp_data(gallery_data),.bmp_valid(gallery_valid),.bmp_end(gallery_end),
         .audio_data(sd_audio_data),.audio_valid(sd_audio_valid),.audio_end(sd_audio_end));
     sd_card_top u_card(.clk(sd_clk),.rst(rst_sd),.SD_nCS(sd_ncs),.SD_DCLK(sd_dclk),
         .SD_MOSI(sd_mosi),.SD_MISO(sd_miso),.sd_init_done(sd_audio_initialized),
@@ -65,13 +77,29 @@ module media_player_top(
         .sd_sec_read_data_valid(card_valid),.sd_sec_read_end(card_end),
         .sd_sec_write(1'b0),.sd_sec_write_addr(32'd0),.sd_sec_write_data(8'd0),
         .sd_sec_write_data_req(),.sd_sec_write_end());
-    wire media_hs,media_vs,media_de,read_req;
-    wire [23:0] adjusted_media=24'h5c94fc;
-    wire active_valid=1'b0;
+    wire media_hs,media_vs,media_de,read_req,raw_hs,raw_vs,raw_de;
+    wire [23:0] adjusted_media;
+    wire active_valid;
+    wire [2:0] cache_count;
+    wire [6:0] image_index,image_count;
+    wire [4:0] fade_gain;
+    wire [1:0] effect_mode;
     // The game renders from texture RAM. No SDRAM read handshake gates its raster.
     video_timing_data u_timing(.video_clk(pix_clk),.rst(rst_pix),
         .read_req(read_req),.read_req_ack(read_req),
-        .hs(media_hs),.vs(media_vs),.de(media_de));
+        .hs(raw_hs),.vs(raw_vs),.de(raw_de));
+    media_gallery u_gallery(.sd_clk(sd_clk),.mem_clk(mem_clk),.mem_clk_shift(mem_clk_shift),
+        .pix_clk(pix_clk),.rst_sd(rst_sd),.rst_mem(rst_mem),.rst_pix(rst_pix),
+        .initialized(sd_audio_initialized),.assets_ready(assets_loaded),.enabled(debug_mode),
+        .next_key_n(next_key_n),.previous_key_n(previous_key_n),.auto_key_n(auto_key_n),
+        .hs(raw_hs),.vs(raw_vs),.de(raw_de),.frame_request(read_req),
+        .alignment_offset(alignment_offset),.transition_mode(display_transition),
+        .request(gallery_req),.sector(gallery_addr),.data(gallery_data),.valid(gallery_valid),.sector_end(gallery_end),
+        .hs_o(media_hs),.vs_o(media_vs),.de_o(media_de),.rgb(adjusted_media),
+        .image_ready(active_valid),.fade_gain(fade_gain),.effect_mode(effect_mode),
+        .cache_count(cache_count),.image_index(image_index),.image_count(image_count),
+        .asset_begin(asset_begin),.asset_we(asset_we),.asset_commit(asset_commit),
+        .asset_rgb(asset_rgb),.asset_failed(asset_failed));
     wire [14:0] bg_addr,sprite_addr;
        wire [3:0] bg_index,sprite_index;
     game_texture_cache u_tex(.write_clk(sd_clk),
@@ -340,12 +368,37 @@ module media_player_top(
            .acr_valid(acr_valid),
            .acr_n(acr_n),
            .acr_cts(acr_cts));
+    wire fx_hs,fx_vs,fx_de,final_hs,final_vs,final_de;
+    wire [23:0] fx_rgb,final_rgb;
+    advanced_video #(.DIRECT_CONTROLS(1),.LAB_UI(1),.ALIGNMENT(1)) u_effects(
+        .clk(pix_clk),.rst(rst_pix),.hs(game_hs),.vs(game_vs),.de(game_de),.rgb(game_rgb),
+        .alignment_offset(alignment_offset),.image_valid(1'b1),.key_menu(1'b1),
+        .overlay_sw(osd_enable&&!alignment_block),.wave_sw(osd_enable&&!alignment_block),
+        .brightness_sw(alignment_block?2'd0:brightness),
+        .fade_gain(debug_mode?fade_gain:5'd16),.effect_mode(debug_mode?effect_mode:2'd0),
+        .pcm_valid(audio_valid),.pcm(output_pcm),.audio_enabled(audio_enabled),
+        .cache_count(cache_count),.image_index(image_index),.image_count(image_count),
+        .control_contrast(alignment_block?2'd0:display_contrast),.control_transition(display_transition),
+        .hs_o(fx_hs),.vs_o(fx_vs),.de_o(fx_de),.rgb_o(fx_rgb));
+    game_menu_video #(.ALIGNMENT(1)) u_menu_video(.clk(pix_clk),.rst(rst_pix),
+        .hs(fx_hs),.vs(fx_vs),.de(fx_de),.rgb(fx_rgb),.alignment_offset(alignment_offset),
+        .active(lab_active&&!alignment_block),.debug_mode(debug_mode),.media_fullscreen(media_fullscreen),
+        .calibration(calibration&&!alignment_block),.page(menu_page),.selection(menu_selection),
+        .view_narrow(view_narrow),.palette_mode(palette_mode),.osd_enable(osd_enable),
+        .audio_enabled(audio_enabled),.test_tone(test_tone),.brightness(brightness),
+        .master_volume(master_volume),.bgm_volume(bgm_volume),.sfx_volume(sfx_volume),.audition_id(audition_id),
+        .audio_available(sd_audio_available),.audio_error(sd_audio_error),
+        .audio_underruns(sd_audio_underruns),.audio_dropped(sd_audio_dropped),
+        .contrast(display_contrast),.transition_mode(display_transition),
+        .assets_ready(assets_loaded),.image_ready(active_valid),
+        .image_index(image_index),.image_count(image_count),.cache_count(cache_count),
+        .hs_o(final_hs),.vs_o(final_vs),.de_o(final_de),.rgb_o(final_rgb));
     wire [9:0] ch0,ch1,ch2,chclk;
     wire hdmi_overflow;
     wire hdmi_locked;
     // Restore the pre-game vendor integration, including actual DDC/EDID.
     game_hdmi_output #(.READ_EDID(1)) u_hdmi(.clk(pix_clk),.rst(rst_pix),
-        .hs(game_hs),.vs(game_vs),.de(game_de),.rgb(game_rgb),
+        .hs(final_hs),.vs(final_vs),.de(final_de),.rgb(final_rgb),
         .sample_valid(audio_valid),.sample_left(output_pcm),.sample_right(output_pcm),
         .acr_valid(acr_valid),.c0(ch0),.c1(ch1),.c2(ch2),.cc(chclk),
         .overflow(hdmi_overflow),.locked(hdmi_locked),

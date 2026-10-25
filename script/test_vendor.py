@@ -7,7 +7,11 @@ def main():
     p.add_argument('--modelsim',default='D:/2_hardware/ModelSim/win64')
     p.add_argument('--td',default='E:/1_software/TD')
     p.add_argument('--bmp',action='store_true')
-    a=p.parse_args();exe=Path(a.modelsim);out=ROOT/('build/vendor_bmp_sim' if a.bmp else 'build/vendor_sim');out.mkdir(parents=True,exist_ok=True)
+    p.add_argument('--offset',type=int,choices=range(640),default=None)
+    a=p.parse_args();exe=Path(a.modelsim)
+    folder='vendor_bmp_sim' if a.bmp else 'vendor_sim'
+    if a.offset is not None:folder+='_offset_'+str(a.offset)
+    out=ROOT/'build'/folder;out.mkdir(parents=True,exist_ok=True)
     # Build-local header selects the same 40 MHz refresh interval as synthesis.
     text=(ROOT/'ip/vendor/course/include/global_def.v').read_text()
     (out/'global_def.v').write_text(text.replace('1000000000/125000000','1000000000/40000000'))
@@ -27,8 +31,10 @@ def main():
     command('vlog.exe',['-sv','+define+REAL_SDRAM'+('+BMP_SOURCE' if a.bmp else ''),'+incdir+.',
         '+incdir+'+(ROOT/'ip/vendor/course/SD').as_posix(),*[str(ROOT/x) for x in paths],
         str(ROOT/'test/sdram_array_model.sv')])
-    log=command('vsim.exe',['-c','-onfinish','exit','work.tb_frame_path','-do','onbreak {quit -code 2 -f}; run -all; quit -f'])
+    generics=[] if a.offset is None else [f'-gALIGN_OFFSET={a.offset}','-gFREE_RASTER=1']
+    log=command('vsim.exe',['-c','-onfinish','exit','work.tb_frame_path',*generics,'-do','onbreak {quit -code 2 -f}; run -all; quit -f'])
     if 'PASS frame path with vendor encrypted SDRAM controller' not in log:raise SystemExit('No positive test receipt')
     (out/'result.json').write_text(json.dumps({'vendor_controller_frame_test':'pass',
+        'offset':a.offset,'free_running_raster':a.offset is not None,
         'device_array':'self-authored functional JEDEC model; not vendor or timing sign-off'}))
 if __name__=='__main__':main()

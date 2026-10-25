@@ -4,6 +4,11 @@ module tb_scope;
     reg [5:0] index=0;wire signed [7:0] sample;wire [7:0] peak;wire valid;
     always #20 clk=~clk;
     audio_scope dut(clk,rst,frame,pvalid,pcm,index,sample,peak,valid);
+    wire signed [7:0] registered_sample;
+    wire [7:0] registered_peak;
+    wire registered_valid;
+    audio_scope #(.REGISTERED_READ(1)) ram_dut(
+        clk,rst,frame,pvalid,pcm,index,registered_sample,registered_peak,registered_valid);
     integer i;
     initial begin
         repeat(3)@(negedge clk);rst=0;
@@ -13,10 +18,14 @@ module tb_scope;
         if(!valid||peak!=32) $fatal(1,"peak");
         for(i=0;i<64;i=i+1) begin
             index=i;pcm=-24'sh800000;pvalid=1;@(negedge clk);
-            if(sample!==i-32) $fatal(1,"display changed during capture");
+            if(sample!==i-32||registered_sample!==i-32)
+                $fatal(1,"display changed during capture at %0d: comb=%0d registered=%0d",i,sample,registered_sample);
         end
         pvalid=0;frame=1;@(negedge clk);frame=0;
         if(peak!=128||sample!=-128) $fatal(1,"signed minimum peak");
+        @(negedge clk);
+        if(!registered_valid||registered_peak!=128||registered_sample!=-128)
+            $fatal(1,"registered RAM bank swap or signed minimum peak");
         $display("PASS scope: signed PCM, full-window atomic swap, stable capture/display, peak -128");$finish;
     end
 endmodule

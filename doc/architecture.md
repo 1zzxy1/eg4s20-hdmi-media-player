@@ -1,72 +1,37 @@
 # 工程架构
 
-## 当前显示诊断分支
+正式入口为 `src/media_player_top.v`，同一位流运行游戏、首屏媒体实验室和音频。已实板确认正常的是此前手动对齐游戏基线；恢复版须单独验收。A/B/C 视频诊断顶层仅保留作历史工具，不作为当前下载目标。
 
-最新候选为独立 `video_svga_top`，构建参数 `--video-svga`、输出 `build/video_svga/`。固定 DMT 800×600／40MHz／1056×628／+HS +VS，约 60.317Hz，新增 `video_svga_pll` 使用 1GHz VCO、50MHz 外反馈、40MHz 像素、200MHz 串行。`video_svga_pattern` 独立计数，RGB 与 HS／VS／DE 一起寄存后进入保留的 DVI 编码器／厂商 PHY。无需 BRAM／DSP／SD／原厂 HDMI 核，DDC 闲置；没有动态模式切换或 EDID 自适应。
+## 启动与存储
 
-这是因为用户实测下述 A/B 都环绕 `8 9 0…7`，数字仿真未覆盖真实故障。C 是兼容性对照，尚非修复结论；成功也不能独自区分时钟、模式和 DDC。Git 对比确认旧 2a818358 的 PLL、PHY 和 RGB→AXIS 源码与当前同内容，没找到这几处定义的回归。游戏／音频源码不随此探针改动。
+`sd_card_top` 提供 SPI 扇区端点；`sd_sector_arbiter` 在完整扇区边界仲裁，音频优先，避免图库读请求打断音频扇区。
 
-`src/diagnostic/video_diagnostic_top.v` 是独立顶层，由 `build_td_gui.py --video-diagnostic` 生成在build/video_diagnostic下，不替换游戏顶层。板上只保留原video_pll、同步复位、SW1／KEY4控制、测试图、两种编码路径和厂商PHY；SD／Flash片选始终高，无读写和声音。
+`media_gallery` 封装图片目录／四槽缓存、帧提交、SDRAM、转场和输出延迟。`sd_card_bmp` 的 BOOT_ATLAS 配置先通过外置解码接口向 `game_asset_loader` 提供 V4 LBA2337 原图。完整帧和签名验证后发布、锁定双读口纹理 RAM，再复用同一 `bmp_sector_player` 扫描目录、缩放预取素材。原独立解码配置仍用于测试和兼容路径。
 
-`video_diagnostic_pattern.v` 用独立800×525计数器直接产生640×480图像及同步，带十个64像素编号栏、四边8像素色框及左右坐标标签。`video_diagnostic.v` 将同一像素送往原厂HDMI适配器和纯DVI编码器；SW1选择，改变路径时重新复位视频和PHY。A走完整EDID／DDC、AXIS／原厂包，B只发有效视频和同步控制符，绕开音频岛／InfoFrame／AXIS。时钟及输出接口共同保留，可用实屏差异定位后续方向。
+游戏依赖 SD 初始化和已发布纹理，不依赖图库完成、SDRAM 初始化或显示确认。图库故障不会撤销已发布图集。音频在图集就绪后启动；预取在后台继续，使用原 V4 六张 BMP／24 轨音频镜像。
 
-该诊断不声称修复游戏错位。用户确认游戏基线BGM已正常，Git检查点d84d8db保存该进度；下文仍描述游戏基线架构。当前诊断资源Slice1444、LUT2446、FF1494、BRAM10、DSP0、PLL1、GCLK1。
+四槽为当前图＋后三张，共 4×640×480×4 字节。切换使用帧边界提交／应答，旧 ACTIVE 槽被显示端确认后才回收。向前命中可直接提交；向后离开预取窗口时按需加载，不承诺所有方向无等待。目录最多 64 项，坏图跳过。
 
-## 当前精简稳定性候选
+SDRAM 保留原厂加密控制器，40MHz。横向补偿拆为 16 词对齐地址和低 4 位行内移位。最多 16×32bit 前缀缓冲保存行首，在下一行前缀到达时输出上一行尾部，最后一行单独冲刷；无额外整行／整帧缓冲。读地址计数和 FIFO 消费保持一帧 307200 像素。
 
-`src/media_player_top.v` 仅连接游戏、图集加载、TF 音频、排行和原厂 HDMI。目标是减少依赖并恢复旧版 HDMI 集成方式；尚未确认实板杂音／环绕／加载等待的根因。
+## 视频与交互
 
-```text
-TF SPI → 扇区仲裁 → BMP 原尺寸解析 → 图集签名／完整帧验证 → 双读口纹理 RAM
-                  └→ 音频目录／PCM → 五声部混音 ───────────────────┐
-                                                                 ↓
-固定视频时序 → 地图／游戏渲染 → RGB 转 AXIS → 原厂 HDMI 核 → 厂商 PHY
-                   ↑                              ↑
-              KEY／SW、世界、排行            上电 EDID／实际 DDC
-```
+固定 640×480／25MHz／800×525，约 59.524Hz，原厂 HDMI 核保持 READ_EDID／实际 DDC 接线并进入原厂 PHY。没有动态 HDMI 分辨率切换。
 
-图集与音频共享卡，先完成图集，再启动音频。游戏每帧只读片内地图和纹理，不读取 SD 或 SDRAM。像素25MHz、SD侧50MHz、串行125MHz，原 PLL 参数保留，未使用的40MHz SDRAM输出及两条对应 generated clock 约束已移除。
+游戏同步地图／纹理读取前计算 `(raster_x+offset)%640`。图库按相同 offset 旋转源像素，菜单和叠层使用相同坐标；HS／VS／DE 与 RGB 一起流水。校准文字使用同步字符 ROM，数值以小型分时转换器原子发布。宽和缩放逻辑视口均覆盖完整输出宽度。
 
-| 模块 | 当前职责 |
-|---|---|
-| `storage/game_asset_loader.v` | V4 固定 LBA2337 读取一次原尺寸 BMP；失败等50ms重试，图集发布后停止 |
-| `storage/bmp_sector_player.v` | `ENABLE_SCALE=0`，640×480／24-bit／bottom-up BMP 解析；像素直接交付，不依赖 SDRAM DMA |
-| `game/game_texture_cache.v` | 提取85个16×16纹理、16色；每读副本11个2048×4 bank，两个独立读副本；完整帧和16像素签名校验后跨域发布 |
-| `game/game_level_map.v` | 4096格真双口同步RAM；A口世界读写／重载，B口渲染读；数据由公开Area6对象流生成 |
-| `game/game_world.v` | 帧步进Q4物理、串行地图碰撞、四敌槽、道具／龟壳／双火球、旗杆与城堡结算 |
-| `game/game_video.v` | 同步地图和纹理流水、HUD／昵称／头像／排行、砖块／奖励／死亡演出；320×240视口两倍映射640×480 |
-| `control/game_inputs.v` | 去抖、模式隔离、KEY3左／KEY2跳／KEY1右／SW4跑火；KEY4昵称和长按开始 |
-| `audio/sd_pcm_player.v` | LBA1目录、48kHz s16le mono，BGM＋4 SFX，跨域扇区双缓冲、饱和混音 |
-| `audio/pcm48_tone.v` | 48kHz节拍／ACR及首屏独立1kHz测试音 |
-| `game/game_scores.v`、`storage/game_score_flash.v` | 前十排行、独立用户Flash双扇区CRC日志 |
-| `video/game_hdmi_output.v` | `READ_EDID=1`；启动脉冲、实际DDC、完整行转AXIS、原厂HDMI核及视频背压锁存 |
+首屏 `game_menu` 管理图库、显示和音频设置；`advanced_video` 负责亮度／对比度、转场、滚动字幕、PCM 波形和状态。`game_menu_video` 使用同步字符 ROM 与动态数值。`game_display_alignment` 保持人工校准、帧边界生效和进出松键隔离。
 
-HDMI固定25MHz、800×525、640×480、约59.524Hz，RGB／VIC1；HS96、前肩16、后肩48，VS2、前肩10、后肩33。48kHz双声道24-bit LPCM，单声道混音复制给左右，N6144／CTS25000。EDID用于恢复原参考集成接法，不自动改输出模式。没有增加横向像素补偿。
+最终叠层使用同步 ASCII 字形 ROM，RGB／坐标／HS／VS／DE 一起增加一拍。波形双缓冲也使用同步 RAM，读地址提前一拍提供，减少逐像素组合选择器；两处优化不改变素材坐标或音频采样链。
 
-## 加载与输入边界
+KEY4 首屏进入昵称，松开后长按一秒快捷开始；昵称后 Debug 禁用。游戏 KEY3 左、KEY2 跳、KEY1 右、SW4 跑／火球。校准 SW3 单独；首屏 SW1 图库、SW2 字幕／波形、SW1＋SW3 显示设置、SW4 音频设置。详见 [操作](board-demo.md)。
 
-图集的LBA2337来自 `make_sd_image.py` 的FAT16固定布局：2048分区起点＋1引导＋2×128 FAT＋32根目录。它不是LBA2048，也不是通用FAT文件解析。当前只支持该镜像布局下的首张游戏图集，其他预览图不加载。
+## 游戏、音频与排行
 
-`asset_begin` 清写入计数，`asset_we` 交付原始BMP像素，`asset_commit` 表示完整源帧结束；纹理缓存仍独立检查307200像素和签名，正确后才锁定。加载就绪跨两拍同步回SD域，失败重试。底层SD永久不结束仍需复位，不承诺热插拔。
+游戏为自研单关 RTL，地图为同步真双口 RAM，纹理为带完整帧／签名和发布锁的双读口缓存。保留敌人、道具、砖块／奖励／变身／死亡／终点演出；并非 FC CPU／PPU／APU 仿真，也不声称逐帧完美复刻。
 
-视频时序的read_req在精简顶层直接确认。游戏不再被SDRAM初始化、首帧DMA或显示切槽确认门控。KEY4在首屏请求PROFILE；PROFILE长按一秒产生quick_start，世界锁存到帧边界、图集和地图就绪后消费。进入游戏先松开KEY1–3使能。SW1全局静音，SW2仅首屏测试音，SW3未使用，SW4跑火。
+一路 BGM＋四 SFX 从 SD 流播，48kHz s16le mono，混音后送 HDMI 双声道。保留此前正常的 PCM 混音、采样节拍、HDMI／PHY；新增首屏设置只控制既有开关、音量和试听。独立 1kHz 测试音用于首屏诊断。64 点波形窗口双缓冲，帧边界发布，标注采样跨度和增益。
 
-## 游戏、声音和排行
+排行为前十名，独立用户 Flash 的 0x600000／0x601000 双日志，含 JEDEC／区域归属、CRC、最后提交及故障回退；不是 FPGA 配置 Flash。实际掉电恢复待验证。
 
-关卡参考Area6／E_GroundArea6，212格、三坑、六管、17个敌人生成点。公开输入通关测试跑到x3264。不是NES模拟器；地下房、烟花、原版逐帧物理尚未完成。
-
-世界按CONTACT→COMMIT→PICKUP→FIRE_STEP→FINISH结算，死亡优先，分数和生命按事件累加。奖励渲染两槽保存世界坐标和寿命；死亡120帧，滑旗后自动入城并逐帧TIME换分。固定文字用1024×8同步ROM，HUD复用一个double-dabble转换器，地图和纹理读口均保留一拍延迟。
-
-`sd_sector_arbiter` 锁定完整扇区，`audio_sector_bridge` 用toggle握手跨域，短扇区／超时检测保留。播放器用五个512×16样本RAM，每声部两扇区，事件队列与generation标签防旧请求污染新音。混音在两次采样之间完成，HDMI消费上一份稳定样本，保留固定一采样延迟；本轮未改PCM算法和音源。
-
-声音默认开，主／BGM／SFX为3／2／3；静音继续推进，TITLE／PROFILE／PLAY播放地上BGM，星音乐替换，死亡／触旗停BGM、保留事件音，重生重播。SW2测试音独立于SD，只在TITLE覆盖输出。
-
-排行为96bit×10，分数降序、时间升序。用户Flash保留 `0x600000/0x601000` 两个4KiB扇区，JEDEC／归属检查、CRC／双日志／最后提交，不擦写未知区；不支持时保留RAM排行。它与FPGA配置Flash W25Q16不同，实板掉电恢复未验收。
-
-## 保留但未启用的媒体代码
-
-SDRAM四槽、图片目录扫描、切换／轮播、转场、亮度／对比度、窄视口、波形和首屏实验室源码及测试继续保留，本版顶层不实例化。此前四槽为当前图＋后三张，共4915200字节，显示确认后回收；这段属于历史设计能力，不能作为当前位流的功能说明。
-
-直接封包器 `game_hdmi_tx.v` 也保留；HDMI专项用 `--direct` 检查，默认检查正式原厂路径。当前Slice7135／9800、LUT13444、FF5428、BRAM52／64、DSP3、PLL2、GCLK2，原生setup +4.053ns／hold +0.011ns。数字验证、资源下降均不能替代实板声画验收。
-
-目录职责为 `src/ip/prj/script/test`，参考FPGA_3结构，不引入其STM32或Quartus依赖；不编辑生成的 `build/staging/gui/`。操作见 [板上测试](board-demo.md)，赛题完成度见 [进度](competition-status.md)。
+只修改 `src/`、`ip/`、约束及脚本等正式源；`build/staging/gui/` 是生成物。部署检查绑定当前源、位流、staging 和 V4 镜像，不能代替板测。

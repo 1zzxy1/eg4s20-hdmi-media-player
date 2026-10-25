@@ -6,7 +6,9 @@ module frame_fifo_read
 	parameter ADDR_BITS              = 21,
 	parameter BURST_BITS             = 9,
 	parameter FIFO_DEPTH             = 512,
-	parameter BURST_SIZE             = 128
+	parameter BURST_SIZE             = 128,
+    parameter ALIGNMENT             = 0,
+    parameter FRAME_WIDTH           = 640
 )               
 (
 	input                            rst,                  
@@ -37,7 +39,9 @@ module frame_fifo_read
 	input[1:0]                       read_addr_index,            // select valid base address from read_addr_0 read_addr_1 read_addr_2 read_addr_3
 	input[ADDR_BITS - 1:0]           read_len,                   // data read module read request data length
 	output reg                       fifo_aclr,                  // to fifo asynchronous clear
-	input[9:0]                      wrusedw                     // from fifo write used words
+	input[9:0]                      wrusedw,                    // from fifo write used words
+    input wire [9:0] alignment_offset,
+    output reg [3:0] read_shift
 
 );
 localparam ONE                       = 256'd1;                   //256 bit '1'   you can use ONE[n-1:0] for n bit '1'
@@ -61,6 +65,14 @@ reg[3:0]                             state;                      //state machine
 reg[1:0]                             read_addr_index_d0;         //synchronize to 'mem_clk' clock domain first
 reg[1:0]                             read_addr_index_d1;         //synchronize to 'mem_clk' clock domain second
 reg [ADDR_BITS - 1:0]	 App_rd_addr_r;
+(* ASYNC_REG="TRUE" *) reg [9:0] offset_sync0,offset_sync1;
+reg [9:0] offset_latch,logical_x,source_x;
+// The controller interleaves four BL4 banks. Its address stream must start
+// on a 16-word boundary; frame_read_write rotates the residual pixels.
+wire [9:0] aligned_offset={offset_sync1[9:4],4'b0000};
+always @(posedge mem_clk or posedge rst)
+    if(rst)begin offset_sync0<=0;offset_sync1<=0;end
+    else begin offset_sync0<=alignment_offset;offset_sync1<=offset_sync0;end
 
 reg [BURST_BITS - 1:0]				burst_cnt;
 wire								rd_burst_finish;
@@ -121,6 +133,7 @@ begin
 		burst_cnt <= ZERO[BURST_BITS - 1:0];
 		App_rd_addr_r <= ZERO[ADDR_BITS - 1:0];
 		App_rd_en_d0 <= 1'b0;
+		offset_latch<=0;logical_x<=0;source_x<=0;read_shift<=0;
 	end
 	else begin
 	
@@ -133,17 +146,30 @@ begin
 		//
 		if(state == S_ACK)
 			begin
+				offset_latch<=ALIGNMENT?aligned_offset:0;
+                read_shift<=ALIGNMENT?offset_sync1[3:0]:0;
+                logical_x<=0;source_x<=ALIGNMENT?aligned_offset:0;
 				if(read_addr_index_d1 == 2'd0)
-					App_rd_addr_r <= read_addr_0;
+					App_rd_addr_r <= read_addr_0+(ALIGNMENT?aligned_offset:0);
 				else if(read_addr_index_d1 == 2'd1)
-					App_rd_addr_r <= read_addr_1;
+					App_rd_addr_r <= read_addr_1+(ALIGNMENT?aligned_offset:0);
 				else if(read_addr_index_d1 == 2'd2)
-					App_rd_addr_r <= read_addr_2;
+					App_rd_addr_r <= read_addr_2+(ALIGNMENT?aligned_offset:0);
 				else if(read_addr_index_d1 == 2'd3)
-					App_rd_addr_r <= read_addr_3;
+					App_rd_addr_r <= read_addr_3+(ALIGNMENT?aligned_offset:0);
 			end
 		else if(App_rd_en)
-			App_rd_addr_r <= App_rd_addr_r + 1'b1;
+            if(ALIGNMENT)begin
+                if(logical_x==FRAME_WIDTH-1)begin
+                    logical_x<=0;source_x<=offset_latch;
+                    App_rd_addr_r<=App_rd_addr_r+(offset_latch==0?1:FRAME_WIDTH+1);
+                end else begin
+                    logical_x<=logical_x+1'b1;
+                    source_x<=source_x==FRAME_WIDTH-1?0:source_x+1'b1;
+                    App_rd_addr_r<=source_x==FRAME_WIDTH-1?
+                        App_rd_addr_r-(FRAME_WIDTH-1):App_rd_addr_r+1'b1;
+                end
+            end else App_rd_addr_r <= App_rd_addr_r + 1'b1;
 		else
 			App_rd_addr_r <= App_rd_addr_r;
 		//

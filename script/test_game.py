@@ -15,16 +15,21 @@ def main():
     sources += sorted((ROOT / 'src/audio').glob('*.v'))
     sources += [ROOT / p for p in ['src/storage/sd_sector_arbiter.v',
         'src/storage/game_asset_loader.v', 'src/storage/bmp_sector_player.v',
+        'src/storage/sd_card_bmp.v','src/storage/image_cache_controller.v',
         'src/storage/game_score_flash.v', 'src/control/game_inputs.v',
         'src/control/game_debug_controls.v',
         'src/control/menu_media_controls.v',
         'src/common/game_boot_reset.v', 'src/video/osd_font.v']]
     results = []
-    for bench in benches:
-        name = bench.stem
+    runs=[(bench,{}) for bench in benches]
+    runs += [(ROOT/'test/tb_game_asset_loader.sv',{'SHARED':1}),
+             (ROOT/'test/tb_game_lobby.sv',{'STABILITY':0})]
+    for bench,parameters in runs:
+        name = bench.stem+('___'+str(next(iter(parameters.values()))) if parameters else '')
         exe = out / (name + '.vvp')
         compiled = subprocess.run(['iverilog', '-g2012', '-Wall', '-Isrc/game',
-            '-s', name, '-o', str(exe), *map(str, sources), str(bench)],
+            '-s', bench.stem, *[f'-P{bench.stem}.{key}={value}' for key,value in parameters.items()],
+            '-o', str(exe), *map(str, sources), str(bench)],
             cwd=ROOT, capture_output=True, text=True)
         (out / (name + '_compile.log')).write_text(compiled.stdout + compiled.stderr)
         compiled.check_returncode()

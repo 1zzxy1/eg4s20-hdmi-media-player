@@ -22,12 +22,12 @@ module game_scene_text(input wire clk,input wire [4:0] message_id,column,
             16:message="K2/K3 EDIT K4 NEXT K1 BACK      ";
             17:message="                                ";
             18:message="KEY3 LEFT KEY1 RIGHT KEY2 JUMP  ";
-            19:message="SW4 RUN FIRE - SW1 MUTE         ";
+            19:message="SW4 RUN FIRE - KEY4 CONFIRM     ";
             20:message="KEEP MOVING JUMP THE GAP        ";
             21:message="THE FINISH IS NEAR              ";
             22:message="DEBUG TF BMP ASSET PREVIEW      ";
-            23:message="SOUND ON  SW1 MUTES             ";
-            24:message="SOUND OFF SW1 UNMUTES           ";
+            23:message="SOUND ON - SW4 LOBBY AUDIO      ";
+            24:message="SOUND OFF - SW4 LOBBY AUDIO     ";
             26:message="EVENT 0  WORLD X 000            ";
             default:message="                                ";
         endcase end
