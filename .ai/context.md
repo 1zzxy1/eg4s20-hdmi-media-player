@@ -1,8 +1,12 @@
 # 当前上下文
 
-当前目标只排查画面横向环绕。用户已实板确认BGM无杂音，仍有右侧内容绕到左侧；要求暂关其他功能并Git保存。游戏检查点已本地提交d84d8db，包含之前目录迁移和全部游戏素材；不推送、不烧板、不写卡。本轮未开子代理。
+当前已停止排障：用户确认新C诊断仍错、效果更差，要求写文档交给其他AI。本轮只整理文档／证据，不继续RTL修改或构建。完整交接在 ../AI交接_显示环绕未解决_2026-10-25.md，两张实拍在 ../交接附件/。BGM已无杂音，游戏检查点d84d8db保留；技术最后提交be49471为失败C探针。本轮未开子代理、未推送、未烧板／写卡。
 
-## 当前诊断交付：C SVGA DVI
+## 最新实屏结论：A/B/C 都失败
+
+C照片D:/download/5.jpg显示C SVGA DVI／800 X 600，编号7 8 9 0…6，色条7跨两端，红绿框在屏内；未精确量出偏移像素。C位流56166cd2不是修复版，不能再标“待实测”。两种分辨率都失败，根因未定，数字仿真没有复现真实故障。用户要求后续从FPGA端处理兼容性，但当前停止由本代理继续尝试。
+
+## 历史 C SVGA DVI 技术记录（数字通过、实板失败）
 
 最新用户反馈 A/B 均为 8 9 0 1 2 3 4 5 6 7，照片 D:/download/44.jpg 为 B；红绿框一起到屏内，约128源像素循环偏移。原理想数字仿真不复现，不能当真实故障回归。显示器杂牌型号未知，用户要求从FPGA输出处理兼容性，不再询问型号。HITL脚本script/test_video_board.ps1导入已提供观察后A/B均FAIL，候选哈希非板卡回读证明。
 
@@ -10,7 +14,7 @@
 
 使用 python script/test_video_svga.py；构建／工程／部署检查统一加 --video-svga。产物 build/video_svga/media_player_Runs/phy_1/media_player.bit，2026-10-25 14:37:01，629635字节，SHA256 56166cd2e49119044c8d68cf30cc1929cf5783e10fb5e818691d96fa2cf46167。原生TD实际退出0：setup +1.447ns／hold +0.025ns，Slice492=5.02%、BRAM0、DSP0，29IO／71RTL／81staging配套通过。显示C SVGA DVI／800 X 600；SW不切换，KEY4复位，LED2就绪、LED3常亮、LED4常灭。
 
-数字新专项最终会话46973实际退出0：功能PLL→正式PHY串行引脚→两整帧960000像素／1965235串行字、行帧同步、40／200MHz、KEY4、存储闲置均通过，损坏蓝通道负例被检出。起止源码哈希一致；回执build/video_svga_sim/result.json passed=true。实际路由网表确认KEY4 PAD输入寄存器ipclk接pix_clk，旧key_meta_reg时钟警告为打包后旧实例提示。无实板C结论，不宣称修复；14项deployment通过。本轮本地Git保存题为test: add SVGA compatibility probe for wrapped display，未推送。
+数字新专项最终会话46973实际退出0：功能PLL→正式PHY串行引脚→两整帧960000像素／1965235串行字、行帧同步、40／200MHz、KEY4、存储闲置均通过，损坏蓝通道负例被检出。起止源码哈希一致；回执build/video_svga_sim/result.json passed=true。实际路由网表确认KEY4 PAD输入寄存器ipclk接pix_clk，旧key_meta_reg时钟警告为打包后旧实例提示。后续实板C仍失败，数字通过不代表修复；14项deployment通过。技术提交be49471，题为test: add SVGA compatibility probe for wrapped display，未推送。
 
 ## 上一轮 A/B 诊断（数字通过，实屏两者均错）
 
@@ -30,7 +34,7 @@ python script/check_deployment.py --video-diagnostic
 
 ## 下一步
 
-用户SRAM下载C的video_svga路径，SW全下，看0～9、红左绿右是否归位；无信号先KEY4按下松开等待，仍无信号单独记录。用户已给出A/B失败，不重复同一测试。C若正常，再将游戏接回兼容输出并重验BGM；仍错记录最左编号／边框位置继续定位，不增加横向补偿，不凭仿真宣称修复。游戏源码与原位流保持，原卡不用重写。
+已收到C失败实拍，不再安排同一测试。本代理停止，交由用户选择其他AI继续；新代理先读根交接和实拍，保留BGM及游戏基线。无板级自动捕获、无旧正常版重新上板对照，这些是验证缺口；不能继续仅凭数字仿真判修复。原卡不用重写。
 
 ## 保留游戏基线
 
