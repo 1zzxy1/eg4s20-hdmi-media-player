@@ -2,6 +2,7 @@
 // Exercise the actual final composition: scope/caption followed by preview HUD.
 module tb_lab_ui #(parameter ALIGN_OFFSET=0);
     reg clk=0,rst=1,hs=0,vs=0,de=0;
+    reg [2:0] caption_mode=0;
     always #5 clk=~clk;
     integer tick=0,sample_number=0;
     wire pcm_valid=tick==15;
@@ -13,7 +14,7 @@ module tb_lab_ui #(parameter ALIGN_OFFSET=0);
     wire fh,fv,fd,mh,mv,md;
     wire [23:0] frgb,mrgb;
     advanced_video #(.DIRECT_CONTROLS(1),.LAB_UI(1),.TRANSITION(0),.ALIGNMENT(1)) fx(
-        .alignment_offset(10'(ALIGN_OFFSET)),
+        .alignment_offset(10'(ALIGN_OFFSET)),.caption_mode(caption_mode),
         .clk(clk),.rst(rst),.hs(hs),.vs(vs),.de(de),.rgb(24'h182840),
         .image_valid(1'b1),.key_menu(1'b1),.overlay_sw(1'b1),.wave_sw(1'b1),
         .brightness_sw(2'd0),.fade_gain(5'd16),.pcm_valid(pcm_valid),.pcm(pcm),
@@ -130,7 +131,31 @@ module tb_lab_ui #(parameter ALIGN_OFFSET=0);
             if(f==3&&caption_sum==first_sum)$fatal(1,"caption did not move");
         end
         $fclose(outfile);
-        $display("PASS lab UI: preview HUD, signed PCM trace, gain/time labels, level, moving final-layer caption across three complete frames");
+        caption_mode=1;
+        vs=1;repeat(2)@(negedge clk);vs=0;
+        if(fx.caption_mode_frame!=1||fx.scroll!=640)
+            $fatal(1,"gallery caption did not appear at start");
+        repeat(2)@(negedge clk);
+        caption_mode=2;
+        vs=1;repeat(2)@(negedge clk);vs=0;
+        if(fx.caption_mode_frame!=2||fx.scroll!=640)
+            $fatal(1,"power-up caption did not replace gallery text");
+        repeat(2)@(negedge clk);
+        caption_mode=3;
+        vs=1;repeat(2)@(negedge clk);vs=0;
+        if(fx.caption_mode_frame!=3||fx.scroll!=640)
+            $fatal(1,"clear caption did not replace power-up text");
+        repeat(2)@(negedge clk);
+        caption_mode=4;
+        vs=1;repeat(2)@(negedge clk);vs=0;
+        if(fx.caption_mode_frame!=4||fx.scroll!=640)
+            $fatal(1,"world-start caption did not replace clear text");
+        repeat(2)@(negedge clk);
+        caption_mode=5;
+        vs=1;repeat(2)@(negedge clk);vs=0;
+        if(fx.caption_mode_frame!=5||fx.scroll!=640)
+            $fatal(1,"finish-approach caption did not replace world-start text");
+        $display("PASS lab UI: PCM trace and scrolling captions across gallery, power-up, clear, start and finish modes");
         $finish;
     end
 endmodule

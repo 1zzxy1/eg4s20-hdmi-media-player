@@ -3,7 +3,7 @@
 module advanced_video #(
     parameter TEXT=1, COLOR=1, SCOPE=1, TRANSITION=1, DIRECT_CONTROLS=0, LAB_UI=0,
     parameter CLOCK_HZ=25_000_000, DEBOUNCE=500_000, LONG_PRESS=25_000_000,
-    parameter ALIGNMENT=0
+    parameter ALIGNMENT=0, STATUS_PANEL=1
 )(
     input wire clk,rst,hs,vs,de,input wire [23:0] rgb,
     input wire image_valid,key_menu,overlay_sw,wave_sw,
@@ -18,7 +18,8 @@ module advanced_video #(
     input wire [2:0] cache_count,
     input wire [6:0] image_index,image_count,
     input wire [1:0] control_contrast,control_transition,
-    input wire [9:0] alignment_offset
+    input wire [9:0] alignment_offset,
+    input wire [2:0] caption_mode
 );
     reg vs_d,de_d;reg [9:0] x,y;
     wire frame_tick=vs&&!vs_d;
@@ -40,14 +41,17 @@ module advanced_video #(
             sound<=audio_enabled;cached<=cache_count;picture<=image_index;total<=image_count;
         end
     reg [9:0] scroll;
+    reg [2:0] caption_mode_frame;
     reg scroll_half;
     always @(posedge clk or posedge rst) begin
-        if(rst) begin x<=0;y<=0;vs_d<=0;de_d<=0;scroll<=640;scroll_half<=0;end
+        if(rst) begin x<=0;y<=0;vs_d<=0;de_d<=0;scroll<=640;scroll_half<=0;caption_mode_frame<=0;end
         else begin
             vs_d<=vs;de_d<=de;
             if(frame_tick) begin
                 y<=0;scroll_half<=!scroll_half;
-                if(scroll_half) scroll<=scroll==895?0:scroll+1'b1;
+                caption_mode_frame<=caption_mode;
+                if(caption_mode_frame!=caption_mode) scroll<=640;
+                else if(scroll_half) scroll<=scroll==895?0:scroll+1'b1;
             end else if(de_d&&!de) y<=y+1'b1;
             x<=de?raster_x+1'b1:10'd0;
         end
@@ -101,18 +105,20 @@ module advanced_video #(
     wire signed [10:0] amplified=$signed(sample)*11'sd2;
     wire signed [10:0] lab_wave_y=11'sd352-(amplified>60?11'sd60:amplified< -60?-11'sd60:amplified);
     wire signed [10:0] wave_distance=$signed({1'b0,y2})-lab_wave_y;
-    wire panel=TEXT&&overlay&&x2>=8&&x2<304&&y2>=8&&y2<56;
+    wire panel=STATUS_PANEL&&TEXT&&overlay&&caption_mode_frame<3'd2&&x2>=8&&x2<304&&y2>=8&&y2<56;
     wire caption=TEXT&&overlay&&y2>=448&&y2<472;
     wire wave_area=SCOPE&&wave&&x2>=64&&x2<576&&y2>=288&&y2<417;
     reg [7:0] ch;
     reg [2:0] glyph_row,glyph_col;
     reg text_area;
     reg [10:0] scroll_coord;
-    localparam [255:0] CAPTION="EG4S20 HDMI MULTIMEDIA PLAYER   ";
     localparam [255:0] SCOPE_TITLE={"PCM 48KHZ - GAIN X2",{13{8'h20}}};
     localparam [255:0] SCOPE_SPAN={"64 SAMPLES: 1.33MS",{14{8'h20}}};
     localparam [63:0] LEVEL="LEVEL   ";
-    wire [4:0] caption_index=(scroll_coord-11'd640)>>3;
+    wire [10:0] caption_fetch_coord={1'b0,x1}+scroll1;
+    wire [4:0] caption_fetch_index=(caption_fetch_coord-11'd640)>>3;
+    wire [7:0] caption_data;
+    caption_rom captions(clk,caption_mode_frame,caption_fetch_index,caption_data);
     wire [4:0] scope_index=(x2-10'd64)>>3;
     // The catalog has at most 64 entries. Bound the decimal arithmetic to
     // seven input bits and share it between index and count characters.
@@ -168,7 +174,7 @@ module advanced_video #(
         end
         if(caption && y2>=456 && y2<464 && scroll_coord>=640 && scroll_coord<896) begin
             text_area=1;glyph_row=y2-456;glyph_col=scroll_coord[2:0];
-            ch=CAPTION[{~caption_index,3'b000}+:8];
+            ch=caption_data;
         end
         if(LAB_UI&&SCOPE&&wave&&x2>=64&&x2<576&&y2>=272&&y2<280)begin
             text_area=1;glyph_row=y2-272;glyph_col=x2[2:0];

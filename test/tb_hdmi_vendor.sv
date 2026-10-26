@@ -30,7 +30,7 @@ module tb_hdmi_vendor;
     wire oh,ov,od,wipe;wire [23:0] out_pixel;
     video_timing_data timing(clk,rst,req,req,hs,vs,de);
     advanced_video effects(clk,rst,hs,vs,de,24'h804020,1'b1,1'b1,1'b1,1'b1,
-        2'b00,5'd16,av,left,oh,ov,od,out_pixel,wipe,,2'd0,1'b0,3'd4,7'd1,7'd6,2'd0,2'd0,10'd0);
+        2'b00,5'd16,av,left,oh,ov,od,out_pixel,wipe,,2'd0,1'b0,3'd4,7'd1,7'd6,2'd0,2'd0,10'd0,3'd0);
     reg prev_de=0,prev_vs=0;
     reg [9:0] px=0,py=0;
     wire [9:0] xpos=prev_de?px:10'd0;

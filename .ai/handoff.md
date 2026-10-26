@@ -1,5 +1,12 @@
 # 当前交接
 
+## 2026-10-26 字幕、轮播与拨码行为
+
+- SW1 首屏图库上拨即自动轮播，每秒一次，KEY1 暂停／继续，KEY2／KEY3 手动切图；SW2 首屏和游戏均显示底部滚动字幕与 PCM 波形；SW3 校准仅首屏。字幕六种模式：首屏、素材库、关卡前段、终点附近、大马里奥、通关。关卡位置以 player_x 1100 为分界，强化状态优先于地点。无需修改原 V4 卡。
+- 新字幕 ROM 使用 1 BRAM；为控制资源，首屏 SW2 顶部重复状态面板在正式顶层关闭，图库／设置 HUD 仍显示状态，底部字幕与波形保留。TD 资源 MSlice 4838／4900、LUT 18157／19600、BRAM 63／64、DSP 7／29。原生 RUN 后 hold -0.020ns，经真实 fix_hold -eco 与重生 bit 为 setup +2.435ns／hold +0.027ns。
+- 当前 bit：prj/media_player_Runs/phy_1/media_player.bit，2026-10-26 17:49:30，637785 字节，SHA256 41b4ab6461a22b385add19c5413b84cc874d9661d5a83d2c3bf102ae7cdbd0ed；verification passed=true。check_project 29IO／75RTL、check_deployment 85staging／6BMP／24轨通过。16 项基础仿真、tb_game_menu、18 帧 5529600 像素独立视频黄金均通过。未实板验收，不烧板／写卡／推送。
+- 构建脚本现在仅在 TD 已 bitgen、无其他日志错误、setup 非负且 hold 为负时，允许 `wait_run phy_1` 的特定错误继续 ECO；本次最终 RUN 正常退出，`native_hold_exit_recovered=false`，该错误分支尚未由最终构建实际触发。旧 16:38 位流为历史，不能用于当前源码。用户已有未跟踪 doc/submission-plan.md 未改动。
+
 ## 2026-10-26 SW 操作核对与位流配套恢复
 
 - 用户询问 SW1～SW4 用途；已从 src/game/game_menu.v、src/media_player_top.v、src/control/game_inputs.v、src/game/game_display_alignment.v 核对：首屏 SW1 图库，SW2 字幕／波形，SW1＋SW3 显示设置，SW4 音频设置；SW3 单独校准；进入游戏后 SW4 加速／火球，其他 SW1～SW3 不承担游戏动作。首屏 SW4 音频页优先；昵称界面禁用首屏 Debug。

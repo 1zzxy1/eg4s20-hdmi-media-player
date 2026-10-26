@@ -10,7 +10,7 @@ module tb_video_golden;
     wire [1:0] requested_mode;
     wire [1:0] render_mode=style==5 ? 2'd2 : (style==2||style==4) ? 2'd1 : 2'd0;
     advanced_video #(.DEBOUNCE(3),.LONG_PRESS(20)) dut(clk,rst,hs,vs,de,rgb,1'b1,key,overlay,wave,bright,gain,pcm_valid,24'sh100000,
-        ho,vo,dout,result,mode,requested_mode,render_mode,1'b0,3'd4,7'd1,7'd6,2'd0,2'd0,10'd0);
+        ho,vo,dout,result,mode,requested_mode,render_mode,1'b0,3'd4,7'd1,7'd6,2'd0,2'd0,10'd0,3'd0);
     video_rgb_to_axis_640x480 adapter(clk,rst,vo,dout,result,user,valid,last,axis);
     always @(posedge clk) begin
         #1;

@@ -22,7 +22,7 @@ module game_menu(input wire clk,rst,frame_tick,
     assign active=lobby&&(|switches);
     assign page=switches[3]?3'd3:switches[2]?3'd2:3'd1;
     assign debug_mode=active;
-    assign osd_enable=lobby&&switches[1];
+    assign osd_enable=(lobby||game_state==2||game_state==6||game_state==7)&&switches[1];
     assign calibration=lobby&&pattern;
     assign media_fullscreen=debug_mode;
     assign reset_game=1'b0;

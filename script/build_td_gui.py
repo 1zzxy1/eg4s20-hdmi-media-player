@@ -126,7 +126,20 @@ def main():
         run=subprocess.run([args.td],input=b'source run_gui.tcl\n',cwd=out,stdout=log,stderr=subprocess.STDOUT,timeout=1800)
     syn=out/'media_player_Runs/syn_1';phy=out/'media_player_Runs/phy_1'
     driver=(out/'driver.log').read_text(errors='replace')
-    if (run.returncode or 'GUI_RUN_FINISHED' not in driver) and not args.negative_control:
+    native_ok=run.returncode==0 and 'GUI_RUN_FINISHED' in driver
+    # TD can report a failed physical RUN after bitgen solely because hold is
+    # negative. Accept that precise state for the routed ECO pass below.
+    hold_exit=(not native_ok and not args.negative_control and
+               'PRJ-8806 ERROR: Run phy_1 has exited unexpectedly.' in driver and
+               'GUI_RUN_FAILED:' in driver and
+               len([line for line in driver.splitlines() if ' ERROR:' in line])==1 and
+               (syn/'run.log').exists() and (phy/'run.log').exists() and
+               (phy/'.bitgen.end.f').exists() and (phy/'media_player.bit').exists() and
+               (phy/'media_player_phy.ts').exists() and
+               (phy/'.bitgen.end.f').stat().st_mtime>=started and
+               read_timing(phy/'media_player_phy.ts')['SWNS']>=0 and
+               read_timing(phy/'media_player_phy.ts')['HWNS']<0)
+    if not native_ok and not hold_exit and not args.negative_control:
         raise SystemExit('Native project flow failed: '+str(out/'driver.log'))
     # Clear TD's cached unused-module flags for the next manual GUI RUN and
     # reassert the persisted list after TD has finished writing the project.
@@ -165,6 +178,7 @@ def main():
     receipt={'passed':True,'project':str(project),'top':top,'bitstream':str(phy/'media_player.bit'),
              'sha256':hashlib.sha256((phy/'media_player.bit').read_bytes()).hexdigest(),
              'pins_checked':len(pins),'timing_ns':wns,'native_gui_flow':True,
+             'native_hold_exit_recovered':hold_exit,
              'post_route_hold_repair':hold_repair,'reviewed_warnings':known,
              'staged_source_sha256':{p.name:hashlib.sha256(p.read_bytes()).hexdigest()
                                      for p in stage.iterdir() if p.is_file()}}

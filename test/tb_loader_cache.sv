@@ -3,7 +3,7 @@
 // geometry is reduced for this scheduling test (full-size pixels are tested
 // independently by tb_loader_recovery and the frame-path/golden regressions).
 module tb_loader_cache;
-    reg clk=0,rst=1,key_next=1,finished=0,ack=0,allow_ack=1;
+    reg clk=0,rst=1,key_next=1,key_auto=1,auto_enable=0,finished=0,ack=0,allow_ack=1;
     always #10 clk=~clk;
     wire [3:0] state;
     wire valid,commit,wreq,we;
@@ -17,7 +17,7 @@ module tb_loader_cache;
     reg [3:0] complete=0;
     reg [7:0] slot_id[0:3];
     sd_card_bmp #(.CLK_FREQ_HZ(1000),.SCAN_START_SECTOR(2048),.SCAN_MAX_SECTOR(2200)) dut(
-        .clk(clk),.rst(rst),.key_next(key_next),.key_auto(1'b1),.state_code(state),
+        .clk(clk),.rst(rst),.key_next(key_next),.key_auto(key_auto),.auto_enable(auto_enable),.state_code(state),
         .bmp_width(16'd640),.bmp_height(16'd480),.display_valid(valid),
         .write_finish_toggle(finished),.display_ack_toggle(ack),.display_commit_toggle(commit),
         .write_buf_idx(wb),.disp_buf_idx(db),.write_req(wreq),.write_req_ack(wreq),
@@ -52,6 +52,7 @@ module tb_loader_cache;
     end
     task tick;begin @(negedge clk);end endtask
     task press;begin key_next=0;repeat(26)tick();key_next=1;repeat(26)tick();end endtask
+    task press_auto;begin key_auto=0;repeat(26)tick();key_auto=1;repeat(26)tick();end endtask
     task await_index(input integer expected);
         integer timeout;
         begin
@@ -83,7 +84,17 @@ module tb_loader_cache;
         press();await_index(6);await_full();
         press();await_index(1);await_full();
         press();await_index(2);await_full();
-        $display("PASS loader cache: six-image scan/marker, partial corrupt image skip, cached switch without SD read, ack-gated refill, wrap");
+        auto_enable=1;repeat(4)tick();
+        if(!dut.auto_play_en)$fatal(1,"opening gallery must start autoplay");
+        await_index(4);
+        press_auto();repeat(4)tick();
+        if(dut.auto_play_en)$fatal(1,"KEY1 must pause autoplay");
+        await_full();
+        repeat(1200)tick();
+        if(index!=4)$fatal(1,"paused gallery advanced");
+        auto_enable=0;repeat(4)tick();auto_enable=1;repeat(4)tick();
+        if(!dut.auto_play_en)$fatal(1,"reopening gallery must restart autoplay");
+        $display("PASS loader cache: six-image scan/marker, ack-gated refill, wrap, automatic one-second autoplay and KEY1 pause");
         $finish;
     end
     initial begin #20000000;$fatal(1,"loader cache timeout index=%0d cache=%0d",index,cached);end

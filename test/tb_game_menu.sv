@@ -49,7 +49,9 @@ module tb_game_menu;
         game_state=1;switches=15;event_key(0);
         if(active||debug_mode||osd_enable||calibration)$fatal(1,"profile debug leaked");
         game_state=2;event_key(3);
-        if(active||profile_request||resets)$fatal(1,"gameplay debug leaked");
+        if(active||profile_request||resets||!osd_enable)$fatal(1,"gameplay SW2/debug routing");
+        switches=4;event_key(1);
+        if(active||osd_enable||calibration)$fatal(1,"SW3 must not enter gameplay calibration");
         $display("PASS game menu: boot-only labs, media actions, display, tone, KEY4 exit and gameplay isolation");$finish;
     end
 endmodule

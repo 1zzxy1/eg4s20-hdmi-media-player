@@ -23,7 +23,7 @@ module tb_hdmi_game_pipeline;
         .brightness_sw(2'd0),.fade_gain(5'd16),.pcm_valid(1'b0),.pcm(24'd0),
         .hs_o(hs),.vs_o(vs),.de_o(de),.rgb_o(upstream_rgb),.wipe_mode(),.requested_mode(),
         .effect_mode(2'd0),.audio_enabled(1'b1),.cache_count(3'd4),.image_index(7'd0),.image_count(7'd6),
-        .control_contrast(2'd0),.control_transition(2'd0));
+        .control_contrast(2'd0),.control_transition(2'd0),.caption_mode(3'd0));
     end endgenerate
     reg pd=0,pv=0;
     reg [9:0] sx=0,sy=0;
@@ -74,7 +74,7 @@ module tb_hdmi_game_pipeline;
         .brightness_sw(2'd0),.fade_gain(5'd16),.pcm_valid(av),.pcm(left),
         .hs_o(fh),.vs_o(fv),.de_o(fd),.rgb_o(frgb),.wipe_mode(),.requested_mode(),
         .effect_mode(2'd0),.audio_enabled(1'b0),.cache_count(3'd4),
-        .image_index(7'd0),.image_count(7'd6),.control_contrast(2'd0),.control_transition(2'd0));
+        .image_index(7'd0),.image_count(7'd6),.control_contrast(2'd0),.control_transition(2'd0),.caption_mode(3'd0));
     game_menu_video menu(.clk(clk),.rst(rst),.hs(fh),.vs(fv),.de(fd),.rgb(frgb),
         .active(1'b0),.debug_mode(1'b1),.media_fullscreen(1'b1),.calibration(CALIBRATION!=0),
         .page(3'd0),.selection(3'd0),.view_narrow(1'b1),.palette_mode(1'b0),

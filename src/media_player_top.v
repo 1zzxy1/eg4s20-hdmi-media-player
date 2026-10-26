@@ -21,7 +21,7 @@ module media_player_top(
     wire alignment_active,alignment_block;
     wire [9:0] alignment_offset;
     game_display_alignment u_alignment(.clk(pix_clk),.rst(rst_pix),.frame_tick(frame_tick),
-        .keys_n(keys_n),.switches({1'b0,(switches[2]&&!switches[0]&&!switches[3]),2'b00}),.active(alignment_active),
+        .keys_n(keys_n),.switches({1'b0,(game_state==0&&switches[2]&&!switches[0]&&!switches[3]),2'b00}),.active(alignment_active),
         .block_controls(alignment_block),.offset(alignment_offset));
     wire lab_active,debug_mode,media_fullscreen,osd_enable,calibration;
     wire menu_active=lab_active||alignment_block;
@@ -91,6 +91,7 @@ module media_player_top(
     media_gallery u_gallery(.sd_clk(sd_clk),.mem_clk(mem_clk),.mem_clk_shift(mem_clk_shift),
         .pix_clk(pix_clk),.rst_sd(rst_sd),.rst_mem(rst_mem),.rst_pix(rst_pix),
         .initialized(sd_audio_initialized),.assets_ready(assets_loaded),.enabled(debug_mode),
+        .auto_enable(game_state==0&&frame_switches[0]&&!frame_switches[2]&&!frame_switches[3]),
         .next_key_n(next_key_n),.previous_key_n(previous_key_n),.auto_key_n(auto_key_n),
         .hs(raw_hs),.vs(raw_vs),.de(raw_de),.frame_request(read_req),
         .alignment_offset(alignment_offset),.transition_mode(display_transition),
@@ -265,6 +266,10 @@ module media_player_top(
        assign flash_hold_n=1'b1;
     wire game_hs,game_vs,game_de;
        wire [23:0] game_rgb;
+    wire [2:0] caption_mode=game_state==0&&frame_switches[0] ? 3'd1 :
+        game_state==4 ? 3'd3 : super_mario&&game_state==2 ? 3'd2 :
+        game_state==2||game_state==6||game_state==7 ?
+            (player_x>=12'd1100 ? 3'd5 : 3'd4) : 3'd0;
     game_video #(.ALIGNMENT(1)) u_game(.clk(pix_clk),
            .alignment_offset(alignment_offset),.alignment_active(alignment_active),
            .death_active(death_active),
@@ -370,9 +375,10 @@ module media_player_top(
            .acr_cts(acr_cts));
     wire fx_hs,fx_vs,fx_de,final_hs,final_vs,final_de;
     wire [23:0] fx_rgb,final_rgb;
-    advanced_video #(.DIRECT_CONTROLS(1),.LAB_UI(1),.ALIGNMENT(1)) u_effects(
+    advanced_video #(.DIRECT_CONTROLS(1),.LAB_UI(1),.ALIGNMENT(1),.STATUS_PANEL(0)) u_effects(
         .clk(pix_clk),.rst(rst_pix),.hs(game_hs),.vs(game_vs),.de(game_de),.rgb(game_rgb),
-        .alignment_offset(alignment_offset),.image_valid(1'b1),.key_menu(1'b1),
+        .alignment_offset(alignment_offset),.caption_mode(caption_mode),
+        .image_valid(1'b1),.key_menu(1'b1),
         .overlay_sw(osd_enable&&!alignment_block),.wave_sw(osd_enable&&!alignment_block),
         .brightness_sw(alignment_block?2'd0:brightness),
         .fade_gain(debug_mode?fade_gain:5'd16),.effect_mode(debug_mode?effect_mode:2'd0),

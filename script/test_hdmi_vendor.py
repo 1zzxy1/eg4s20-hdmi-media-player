@@ -23,7 +23,7 @@ def main():
         assert p.returncode==0,name+' failed'
         return p.stdout+p.stderr
     run('vlib.exe',['work'])
-    names=['src/video/advanced_video.v','src/control/video_controls.v','src/audio/audio_scope.v','src/video/osd_font.v','src/audio/pcm48_tone.v',
+    names=['src/video/advanced_video.v','src/video/caption_rom.v','src/control/video_controls.v','src/audio/audio_scope.v','src/video/osd_font.v','src/audio/pcm48_tone.v',
         'src/video/video_timing_data.v','ip/vendor/course/SD/color_bar.v','ip/vendor/course/SD/video_delay.v',
         'src/video/video_rgb_to_axis_640x480.v','ip/vendor/course/startup_pulse.v',
         'src/video/game_hdmi_output.v','src/video/game_hdmi_tx.v','src/video/game_hdmi_channel.v','src/video/game_hdmi_terc.v',

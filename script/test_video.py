@@ -52,7 +52,7 @@ def frame(style,n):
             yield '%02x%02x%02x\n'%rgb
 def main():
     OUT.mkdir(parents=True,exist_ok=True);exe=OUT/'video_golden.vvp'
-    sources=['src/video/advanced_video.v','src/control/video_controls.v','src/audio/audio_scope.v','src/video/osd_font.v']
+    sources=['src/video/advanced_video.v','src/video/caption_rom.v','src/control/video_controls.v','src/audio/audio_scope.v','src/video/osd_font.v']
     subprocess.run(['iverilog','-g2012','-s','tb_video_golden','-o',str(exe),
         *sources,'src/video/video_rgb_to_axis_640x480.v','test/tb_video_golden.sv'],cwd=ROOT,check=True)
     for style in range(9):

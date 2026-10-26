@@ -35,7 +35,7 @@ module sd_card_bmp #(
     input wire native_assets_ready,output wire native_failed
 );
     wire key_previous_i=(key_previous===1'b0)?1'b0:1'b1;
-    wire auto_enable_i=(auto_enable===1'b0)?1'b0:1'b1;
+    wire auto_enable_i=(auto_enable===1'b1);
     wire key_next_press, key_auto_press,key_previous_press;
     wire sd_sec_read, sd_sec_read_data_valid, sd_sec_read_end, sd_init_done;
     wire [31:0] sd_sec_read_addr;
@@ -62,7 +62,8 @@ module sd_card_bmp #(
     reg [6:0] found_count;
     reg scan_kicked, scan_start_pulse, bmp_ready_prev;
     reg auto_play_en;
-    reg [31:0] auto_count;
+    reg auto_enable_prev;
+    reg [$clog2(CLK_FREQ_HZ)-1:0] auto_count;
     (* ASYNC_REG="TRUE" *) reg [2:0] finish_sync, display_ack_sync;
     wire load_start;
     wire [5:0] load_image;
@@ -120,13 +121,14 @@ module sd_card_bmp #(
     always @(posedge clk or posedge rst) begin
         if(rst) begin
             finish_sync<=0;display_ack_sync<=0;scan_kicked<=0;scan_start_pulse<=0;
-            found_count<=0;bmp_ready_prev<=1;auto_play_en<=0;auto_count<=0;
+            found_count<=0;bmp_ready_prev<=1;auto_play_en<=0;auto_enable_prev<=0;auto_count<=0;
         end else begin
             finish_sync<={finish_sync[1:0],write_finish_toggle};
             display_ack_sync<={display_ack_sync[1:0],display_ack_toggle};
             bmp_ready_prev<=bmp_ready;scan_start_pulse<=0;
+            auto_enable_prev<=auto_enable_i;
             if(!sd_init_done) begin
-                scan_kicked<=0;found_count<=0;auto_play_en<=0;auto_count<=0;
+                scan_kicked<=0;found_count<=0;auto_play_en<=0;auto_enable_prev<=0;auto_count<=0;
             end else begin
                 if(!scan_kicked && bmp_ready) begin scan_start_pulse<=1;scan_kicked<=1;end
                 if(scan_found_valid && found_count<64) begin
@@ -134,6 +136,7 @@ module sd_card_bmp #(
                     found_count<=found_count+1'b1;
                 end
                 if(!auto_enable_i) begin auto_play_en<=0;auto_count<=0;end
+                else if(!auto_enable_prev) begin auto_play_en<=1;auto_count<=0;end
                 else if(key_auto_press && catalog_ready && found_count>1) begin
                     auto_play_en<=~auto_play_en;auto_count<=0;
                 end else if(auto_play_en && display_valid && found_count>1) begin

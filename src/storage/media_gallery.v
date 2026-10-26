@@ -2,7 +2,7 @@
 // Gallery faults never gate the game raster or texture RAM publication.
 module media_gallery(
     input wire sd_clk,mem_clk,mem_clk_shift,pix_clk,rst_sd,rst_mem,rst_pix,
-    input wire initialized,assets_ready,enabled,
+    input wire initialized,assets_ready,enabled,auto_enable,
     input wire next_key_n,previous_key_n,auto_key_n,
     input wire hs,vs,de,frame_request,
     input wire [9:0] alignment_offset,input wire [1:0] transition_mode,
@@ -15,7 +15,7 @@ module media_gallery(
     output wire asset_begin,asset_we,asset_commit,asset_failed,
     output wire [23:0] asset_rgb
 );
-    (* ASYNC_REG="TRUE" *) reg [1:0] ready_sync,enable_sync,write_ack_sync,read_ack_sync;
+    (* ASYNC_REG="TRUE" *) reg [1:0] ready_sync,auto_sync,write_ack_sync,read_ack_sync;
     (* ASYNC_REG="TRUE" *) reg [16:0] status0,status1;
     wire [2:0] cached;
     wire [6:0] picture,total;
@@ -26,10 +26,10 @@ module media_gallery(
     wire commit_toggle,ack_toggle,commit_hold;
     reg write_toggle,read_pending,frame_d;
     always @(posedge sd_clk or posedge rst_sd)
-        if(rst_sd)begin ready_sync<=0;enable_sync<=0;write_ack_sync<=0;end
+        if(rst_sd)begin ready_sync<=0;auto_sync<=0;write_ack_sync<=0;end
         else begin
             ready_sync<={ready_sync[0],assets_ready};
-            enable_sync<={enable_sync[0],enabled};
+            auto_sync<={auto_sync[0],auto_enable};
             write_ack_sync<={write_ack_sync[0],write_ack};
         end
     always @(posedge mem_clk or posedge rst_mem)
@@ -47,7 +47,7 @@ module media_gallery(
     sd_card_bmp #(.CLK_FREQ_HZ(50_000_000),.EXTERNAL_CARD(1),.BOOT_ATLAS(1),
         .SCAN_START_SECTOR(32'd2048),.SCAN_MAX_SECTOR(32'd131071)) loader(
         .clk(sd_clk),.rst(rst_sd),.key_next(next_key_n),.key_auto(auto_key_n),
-        .key_previous(previous_key_n),.auto_enable(enable_sync[1]),
+        .key_previous(previous_key_n),.auto_enable(auto_sync[1]),
         .bmp_width(16'd640),.bmp_height(16'd480),
         .write_finish_toggle(write_toggle),.display_ack_toggle(ack_toggle),
         .display_commit_toggle(commit_toggle),.write_buf_idx(write_bank),.disp_buf_idx(pending_bank),
