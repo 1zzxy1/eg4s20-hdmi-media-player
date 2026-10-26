@@ -1,5 +1,11 @@
 # 当前交接
 
+## 2026-10-26 SW 操作核对与位流配套恢复
+
+- 用户询问 SW1～SW4 用途；已从 src/game/game_menu.v、src/media_player_top.v、src/control/game_inputs.v、src/game/game_display_alignment.v 核对：首屏 SW1 图库，SW2 字幕／波形，SW1＋SW3 显示设置，SW4 音频设置；SW3 单独校准；进入游戏后 SW4 加速／火球，其他 SW1～SW3 不承担游戏动作。首屏 SW4 音频页优先；昵称界面禁用首屏 Debug。
+- 只读检查发现磁盘 bit 为用户在 2026-10-25 17:51:31 手动 RUN 产物，SHA256 A8E9E5D3…，与 17:44:40 回执不符；其实际 hold 为 -0.011ns。未改 src／ip／素材，TD 已关闭。运行 python script/build_td_gui.py 原生构建会话75959退出0，实际 fix_hold -eco 后新 bit 于 2026-10-26 16:38:09 生成，636621字节，SHA256 42caa68652832a9d545637708854e1773a0d29497cd1473fb10ed54cdd9b0b5b，setup+2.435ns／hold+0.024ns，verification passed=true。check_project 29IO／74RTL、check_deployment 84staging／6BMP／24轨通过。
+- README、competition-status、context 同步最新位流；尚未新实板验收，未重跑 RTL 功能专项。用户已有未跟踪 doc/submission-plan.md 为他人/用户文件，未编辑或提交；其中 18:20 位流不匹配记录已被本次重建解决，但该文件本身仍保留原状。不操作实体板卡／SD，不推送。
+
 ## 2026-10-25 17:44 GUI RUN 黑盒修复：保存清单缺项，已重新构建
 
 - 用户手动 RUN 报 game_display_alignment、media_gallery、game_alignment_pattern 黑盒。`python script/check_project.py` 实际退出 1，缺 9 个登记（含 6 个历史诊断源）；17:37 的 syn/run.log 复现三条 HDL-8007。16:59 driver.log 三模块已被读取，而 17:37 保存的 `.al` 缺项，符合旧 GUI 清单覆盖更新登记。用户通过异步回复明确已关闭工程且未保存。
