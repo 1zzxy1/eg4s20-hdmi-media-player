@@ -123,6 +123,23 @@ module tb_game_enemies;
         if(enemy_kind[koopa_slot*2 +: 2]!=3 || !enemy_active[koopa_slot])
             $fatal(1,"shell was not kicked kind=%0d player=%0d enemy=%0d",
                    enemy_kind[koopa_slot*2 +: 2],player_x,enemy_x[koopa_slot*12 +: 12]);
+        // Recreate a top contact with a stopped shell through the real CONTACT
+        // state. A shell stomp must kick it and the entity pass must move it.
+        @(negedge clk);
+        koopa_x=enemy_x[koopa_slot*12 +: 12];
+        dut.enemy_kind[koopa_slot*2 +: 2]=2;
+        dut.xq=koopa_x<<4;dut.yq=(enemy_y[koopa_slot*9 +: 9]-16)<<4;
+        dut.next_xq=koopa_x<<4;
+        dut.next_yq=(enemy_y[koopa_slot*9 +: 9]-15)<<4;
+        dut.next_vy=1;dut.body_height=16;dut.grounded=0;
+        dut.entity_index=koopa_slot;dut.phase=15;
+        @(negedge clk);
+        if(enemy_kind[koopa_slot*2 +: 2]!=3)
+            $fatal(1,"top stomp did not kick stopped shell kind=%0d",enemy_kind[koopa_slot*2 +: 2]);
+        for(i=0;i<4 && enemy_x[koopa_slot*12 +: 12]==koopa_x;i=i+1) step();
+        if(enemy_x[koopa_slot*12 +: 12]==koopa_x)
+            $fatal(1,"rolling shell did not move from x=%0d phase=%0d state=%0d",
+                   koopa_x,dut.phase,state);
 
         boot();tile[{4'd10,8'd2}]=4;tile[{4'd9,8'd4}]=4;
         jump_hold=1;tap();jump_hold=0;repeat(40) step();
@@ -146,7 +163,7 @@ module tb_game_enemies;
         if(!fire_kill_far || state!=2 || score<2200)
             $fatal(1,"fireball did not remove Goomba at range x=%0d score=%0d state=%0d",
                    player_x,score,state);
-        $display("PASS game enemies: Goomba side damage/stomp, Koopa shell/kick, ranged fireball kill");
+        $display("PASS game enemies: Goomba contact, Koopa side/top shell kicks and motion, ranged fireball kill");
         $finish;
     end
     initial begin #10000000 $fatal(1,"enemy timeout"); end

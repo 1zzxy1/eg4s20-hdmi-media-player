@@ -508,7 +508,10 @@ module game_world(
                             if(star_state || ($signed(next_vy)>=0 &&
                                yq[12:4]+body_height<=ey+4)) begin
                                 if(star_state || enemy_kind[k*2 +: 2]==0) enemy_active[k]<=0;
-                                else enemy_kind[k*2 +: 2]<=2;
+                                else if(enemy_kind[k*2 +: 2]==2) begin
+                                    enemy_kind[k*2 +: 2]<=3;
+                                    enemy_dir[k]<=facing_left;
+                                end else enemy_kind[k*2 +: 2]<=2;
                                 if(!star_state) begin next_vy<=-9'sd64;grounded<=0;end
                                 score<=score+24'd200;event_valid<=1;event_code<=3;
                                 reward_valid<=1;reward_kind<=1;reward_x<=ex;reward_y<=ey;

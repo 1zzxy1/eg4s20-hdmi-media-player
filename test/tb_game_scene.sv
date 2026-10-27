@@ -21,6 +21,9 @@ module tb_game_scene;
     reg [11:0] scene_reward_x=0;
     reg [8:0] scene_reward_y=0;
     integer reward_mode=0,reward_pixels=0,reward_address;
+    integer fire_light_samples=0,fire_red_samples=0;
+    reg fire_color_check;
+    reg [23:0] fire_color_expected;
     reg [23:0] reward_expected;
     integer death_mode=0,death_pixels=0,death_v,death_address;
     reg [23:0] death_expected,death_texel;
@@ -102,8 +105,20 @@ module tb_game_scene;
     always @(posedge clk) begin
         if(rst) begin hs_pipe<=0;vs_pipe<=0;de_pipe<=0;end
         else begin
+            fire_color_check=scene_fire && scene_state==2 && video.player1 &&
+                video.fire1 && video.loaded1 && video.sprite1 &&
+                (sprite_index==4'd6 || sprite_index==4'd9);
+            fire_color_expected=sprite_index==4'd6?`GAME_PAL_3:`GAME_PAL_6;
             hs_pipe<={hs_pipe[1:0],hs};vs_pipe<={vs_pipe[1:0],vs};de_pipe<={de_pipe[1:0],de};
             #1;
+            if(fire_color_check) begin
+                if(fire_color_expected==`GAME_PAL_3)
+                    fire_light_samples=fire_light_samples+1;
+                else fire_red_samples=fire_red_samples+1;
+                if(rgb_o!==fire_color_expected)
+                    $fatal(1,"fire Mario color index=%0d got=%h expected=%h",
+                           sprite_index,rgb_o,fire_color_expected);
+            end
             if(hs_o!==hs_pipe[2]||vs_o!==vs_pipe[2]||de_o!==de_pipe[2])
                 $fatal(1,"scene raster sync misaligned");
             if(de_o) begin
@@ -253,6 +268,9 @@ module tb_game_scene;
         scene_fireball_active=2'b01;scene_fireball_x={12'd0,12'd1024};
         scene_fireball_y={9'd0,9'd160};
         capture_frame("build/game_sim/game_midcourse.ppm");
+        if(fire_light_samples<100 || fire_red_samples<100)
+            $fatal(1,"fire Mario colors not exercised light=%0d red=%0d",
+                   fire_light_samples,fire_red_samples);
         scene_camera=12'd3136;scene_player_x=12'd3168;scene_player_y=9'd176;
         scene_enemy_active=0;scene_fireball_active=0;scene_state=6;scene_flag_y=9'd128;
         capture_frame("build/game_sim/game_finish.ppm");

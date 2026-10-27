@@ -1,6 +1,6 @@
 # 当前上下文
 
-2026-10-26 最新：SW1 首屏图库自动每秒轮播、KEY1 暂停；SW2 首屏和游戏均显示六阶段动态字幕及 PCM 波形；SW3 仅首屏校准。TD 原生构建与实际 hold ECO 后 bit 为 prj/media_player_Runs/phy_1/media_player.bit，2026-10-26 17:49:30，637785 字节，SHA256 41b4ab6461a22b385add19c5413b84cc874d9661d5a83d2c3bf102ae7cdbd0ed，setup +2.435ns／hold +0.027ns。MSlice 4838／4900、BRAM 63／64。16 项基础仿真、菜单控制、18 帧独立视频黄金、check_project、check_deployment 通过。原 V4 卡未变，尚未新实板验收；不烧板、不写卡、不推送。下方旧位流均为历史，不能当当前产物。
+2026-10-27 最新：火焰花形态配色与 Mario-master 的 Fire_mario 素材五个使用帧量化后逐像素一致；静止龟壳从上方再次踩中也会滚动，侧面碰撞保持原行为。TD 原生构建与实际 hold ECO 后 bit 为 prj/media_player_Runs/phy_1/media_player.bit，2026-10-27 12:15:16，637785 字节，SHA256 085ed198af4d8a3a58c43c10e25857660cfdd1e4176456059287d01a3af3ea5f，setup +2.293ns／hold +0.021ns。MSlice 4828／4900、LUT 18211／19600、BRAM 63／64。敌人及 20 帧场景专项、6 项素材测试、check_project、check_deployment 通过；没有重跑完整 14 组回归。SW1 首屏图库每秒轮播、SW2 首屏和游戏字幕／PCM 波形、SW3 仅首屏校准均保留。原 V4 卡未变，尚未新实板验收；不烧板、不写卡、不推送。下方旧位流均为历史。
 
 最新为 2026-10-25 17:44 GUI RUN 黑盒修复：旧 TD GUI 保存的 `.al` 漏掉三个实际实例化模块，工程检查与综合日志均复现。用户已关闭工程且未保存；已补全 74 个 RTL 登记。已有工程的脚本 RUN 只从持久清单读取 RTL，关闭 TD 后再次同步，并在检测到工程锁时拒绝改写。此次仅改构建／测试／文档，src、ip、约束、SD 素材未变。完整 native RUN 会话71842退出0，真实 hold ECO 后 setup+2.435ns／hold+0.024ns；最新 bit 为2026-10-25 17:44:40、636621字节，SHA256 da6dd4c3f4a104a08e7d3c2e715690395991f562a8b9d367ed4ad7b6210175f6。check_project、check_deployment、15项deployment测试通过；未重跑未改RTL完整回归，恢复版仍待板测。重新打开 prj/media_player.al，原 V4 卡不需重写，不烧板／不写卡／不推送；Git保存按用户既有授权。下段16:59位流为历史记录，最新产物以上述17:44和handoff顶部为准。
 

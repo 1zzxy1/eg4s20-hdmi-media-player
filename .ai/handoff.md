@@ -1,5 +1,11 @@
 # 当前交接
 
+## 2026-10-27 火焰花配色与龟壳滚动
+
+- 游戏图集普通大马里奥的调色板索引 6→3、9→6，与参考项目 `Fire_mario` 在待机、跑步、跳跃、蹲下五个已使用帧量化后零像素差异；无需改 V4 TF 卡。静止龟壳现在被从上方再次踩中时进入滚动状态，并按面向方向前进；侧面踢动保留。
+- `tb_game_enemies`、`tb_game_scene`（20 帧）、`test_game_assets.py`（6 项）通过；`git diff --check` 通过。原生 TD RUN、实际 `fix_hold -eco` 和重生 bit 通过，setup +2.293ns／hold +0.021ns，MSlice 4828／4900、LUT 18211／19600、BRAM 63／64、DSP 7／29。`check_project` 为 29 IO／75 RTL，`check_deployment` 为 85 staging／6 BMP／24 轨，均通过。
+- 当前 bit：`prj/media_player_Runs/phy_1/media_player.bit`，2026-10-27 12:15:16，637785 字节，SHA256 `085ed198af4d8a3a58c43c10e25857660cfdd1e4176456059287d01a3af3ea5f`。未重跑完整回归，未实板验收；不写实体卡／不烧板／不推送。用户下一步只需下载当前 bit，在游戏里验火焰花和龟壳；原卡沿用。
+
 ## 2026-10-26 字幕、轮播与拨码行为
 
 - SW1 首屏图库上拨即自动轮播，每秒一次，KEY1 暂停／继续，KEY2／KEY3 手动切图；SW2 首屏和游戏均显示底部滚动字幕与 PCM 波形；SW3 校准仅首屏。字幕六种模式：首屏、素材库、关卡前段、终点附近、大马里奥、通关。关卡位置以 player_x 1100 为分界，强化状态优先于地点。无需修改原 V4 卡。

@@ -16,7 +16,7 @@ python script/check_deployment.py
 
 如果手动 RUN 出现 `game_display_alignment`、`media_gallery` 或 `game_alignment_pattern is a black box`，先关闭工程且不要保存旧清单，再执行上述三个命令，完成后重新打开 `prj/media_player.al`。旧 GUI 缓存可能把新增文件登记覆盖掉；构建脚本会补全持久登记、清理排除缓存，并在工程被占用时拒绝改写。已有工程的脚本 RUN 直接使用保存的 RTL 清单，避免临时 `add_files` 掩盖 GUI 缺项。
 
-2026-10-26 17:49:30 生成的位流为 637785 字节，SHA256 `41b4ab6461a22b385add19c5413b84cc874d9661d5a83d2c3bf102ae7cdbd0ed`。实际 hold ECO 修复并重新生成位流后，setup +2.435ns／hold +0.027ns；MSlice 4838／4900、LUT 18157／19600、BRAM 63／64、DSP 7／29。资源较紧，后续扩展需重新评估。
+2026-10-27 12:15:16 生成的位流为 637785 字节，SHA256 `085ed198af4d8a3a58c43c10e25857660cfdd1e4176456059287d01a3af3ea5f`。实际 hold ECO 修复并重新生成位流后，setup +2.293ns／hold +0.021ns；MSlice 4828／4900、LUT 18211／19600、BRAM 63／64、DSP 7／29。资源较紧，后续扩展需重新评估。
 
 继续使用原 V4 SD 卡，素材和音频布局没有变化，无需重写卡。当前没有操作实体卡、下载 FPGA 或固化配置 Flash。详细下载流程见 [下载与固化](doc/bringup.md)。
 
@@ -39,6 +39,8 @@ python script/check_deployment.py
 默认有声，主／BGM／SFX 音量为 3／2／3。波形显示 64 个 48kHz PCM 样本（1.33ms）、零线、幅度参考、增益和电平条。声音开关在音频设置中，SW1 不再是旧稳定性版本的全局静音。
 
 SW2 字幕按首屏、素材库、关卡前段、终点附近、大马里奥和通关切换；游戏中蘑菇强化优先显示大马里奥字幕。首屏 SW2 的顶部重复状态面板已合并到图库／设置 HUD，底部字幕与 PCM 波形保留。游戏中 SW3 不触发校准。
+
+火焰花形态按参考素材的火焰马里奥配色显示；静止龟壳再次踩中或从侧面碰撞后开始滚动。两项只改 RTL，沿用原 V4 SD 卡。
 
 ## 数据与模块
 
