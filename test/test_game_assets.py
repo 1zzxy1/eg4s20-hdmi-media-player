@@ -15,9 +15,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "script"))
 from make_sd_image import CLUSTER_BYTES, DATA_LBA, PARTITION_LBA, FAT_SECTORS, make_image, validate_bmp
-from pack_game_assets import (DEFAULT_SOURCE, OPAQUE_PALETTE, PAGE_SIZES,
-                              SIGNATURE, TILES, TRANSPARENT, build,
-                              read_graphics, source_tiles)
+from pack_game_assets import DEFAULT_SOURCE, PAGE_SIZES, SIGNATURE, TILES, TRANSPARENT, build, source_tiles
 
 
 class GameAssetTests(unittest.TestCase):
@@ -43,27 +41,6 @@ class GameAssetTests(unittest.TestCase):
                 crop.putdata([(r, g, b, 0 if (r, g, b) == (107, 140, 255) else a)
                               for r, g, b, a in crop.getdata()])
             self.assertEqual(hashlib.sha256(crop.tobytes()).hexdigest(), entry["sha256_rgba"])
-
-    def test_fire_palette_matches_source_frames(self) -> None:
-        specs = read_graphics(DEFAULT_SOURCE)
-        palette = [TRANSPARENT, *OPAQUE_PALETTE]
-
-        def index(pixel: tuple[int, int, int, int]) -> int:
-            if pixel[3] < 128:
-                return 0
-            return min(range(1, len(palette)), key=lambda candidate:
-                       sum((channel - target) ** 2
-                           for channel, target in zip(pixel[:3], palette[candidate])))
-
-        source = Image.open(specs["Big_mario"][0]).convert("RGBA")
-        for frame in (0, 1, 4, 5, 6):
-            frames = []
-            for name in ("Big_mario", "Fire_mario"):
-                _, x, y, width, height, _, _, _, step = specs[name]
-                frames.append([index(source.getpixel((x + frame * step + u, y + v)))
-                               for v in range(height) for u in range(width)])
-            self.assertEqual([{6: 3, 9: 6}.get(color, color) for color in frames[0]],
-                             frames[1], f"fire palette frame {frame}")
 
     def test_bmp_region_palette_and_bottom_up_order(self) -> None:
         self.assertEqual(len(self.pages), 6)

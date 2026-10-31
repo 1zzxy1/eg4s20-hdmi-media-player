@@ -450,22 +450,12 @@ module game_video #(
         end
     end
     reg [23:0] color;
-    reg [3:0] player_palette_index;
-    always @* begin
-        player_palette_index=sprite_index;
-        if(player1&&fire1) begin
-            // Matches the Fire_mario frames in the source art after 16-color quantization.
-            case(sprite_index)
-                4'd6:player_palette_index=4'd3;
-                4'd9:player_palette_index=4'd6;
-            endcase
-        end
-    end
     always @* begin
         color=inside1?24'h6b8cff:24'h101a30;
         if(loaded1&&tile1&&bg_index!=0) color=palette(bg_index);
         if(loaded1&&sprite1&&sprite_index!=0) begin
-            color=palette(player_palette_index);
+            color=palette(sprite_index);
+            if(player1&&fire1&&(sprite_index==5||sprite_index==6)) color=24'hfefefe;
             if(player1&&star1)color=palette(sprite_index^{2'b0,anim});
             if(player1&&grow1)color=24'hfff0b0;
         end
