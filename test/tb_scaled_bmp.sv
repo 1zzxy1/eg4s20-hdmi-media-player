@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 module tb_scaled_bmp;
-    parameter W=640,H=480,FILE_BYTES=1024,SCALING=1;
+    parameter W=640,H=480,FILE_BYTES=1024,SCALING=1,ZOOM=0;
     reg clk=0,rst=1,start=0,ack=0,pready=0,dvalid=0,dend=0;
     reg [7:0] din=0;
     always #10 clk=~clk;
@@ -11,7 +11,7 @@ module tb_scaled_bmp;
     string image_path,golden_path;
     integer bad=0,short_sector=0,no_reply=0,negative=0,pixels=0,cycles=0,j,base,served=0;
     bmp_sector_player #(.ENABLE_SCALE(SCALING),.OUT_WIDTH(W),.OUT_HEIGHT(H),.TIMEOUT_CYCLES(20000)) dut(
-        .clk(clk),.rst(rst),.sd_init_done(1'b1),.scan_start(1'b0),.scan_start_sector(32'd2048),
+        .clk(clk),.rst(rst),.sd_init_done(1'b1),.view_zoom(ZOOM!=0),.scan_start(1'b0),.scan_start_sector(32'd2048),
         .scan_max_sector(32'd2048),.scan_target_count(3'd1),.scan_done(),.scan_found_valid(),
         .scan_found_sector(),.scan_found_total(),.load_start(start),.load_sector(32'd2048),
         .ready(ready),.state_code(state),.write_req(wreq),.write_req_ack(ack),.pixel_ready(pready),

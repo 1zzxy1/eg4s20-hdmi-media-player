@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-module tb_game_menu_video;
+module tb_game_menu_video #(parameter CACHE_SLOTS=5);
     reg clk=0,rst=1,hs=0,vs=0,de=0;
     always #5 clk=~clk;
     reg [23:0] rgb=0;
@@ -13,10 +13,11 @@ module tb_game_menu_video;
     reg [15:0] audio_underruns=16'h1234,audio_dropped=16'habcd;
     reg [1:0] contrast=0,transition_mode=0;
     reg assets_ready=1,image_ready=1;
+    reg auto_playing=0,navigation_busy=0;
     reg [6:0] image_index=2,image_count=6;
     reg [2:0] cache_count=4;
     wire hs_o,vs_o,de_o;wire [23:0] rgb_o;
-    game_menu_video dut(.alignment_offset(10'd0),.*);
+    game_menu_video #(.CACHE_SLOTS(CACHE_SLOTS)) dut(.alignment_offset(10'd0),.*);
     integer px,py,pixels=0,ox,oy,mode=0,outfile,white_count=0;
     reg [1:0] hp=0,vp=0,dp=0;
     function [23:0] base_color(input integer x,y);
@@ -38,10 +39,17 @@ module tb_game_menu_video;
                 5:label="PLAY SELECTED SOUND";
                 6:label=view_mode==1?"1KHZ TEST TONE: OFF":"1KHZ TEST TONE: ON";
             endcase
+            else if(view_mode==6||view_mode==7)case(line)
+                0:label=view_mode==6?"K2 PREV K3 NEXT K1 AUTO":"K2 PREV K3 NEXT K1 AUTO  LOADING";
+                1:begin
+                    label=view_mode==6?"IMG:02/06 CACHE:5 AUTO:ON     3S":"IMG:02/06 CACHE:2 AUTO:PAUSED 3S";
+                    if(view_mode==6)label[15*8+:8]=8'd48+CACHE_SLOTS;
+                end
+            endcase
             else case(line)
-                0:label="GAME VIEW: WIDE / FULL SCREEN";
+                0:label=view_mode==8?"VIEW: CENTER 2X":"VIEW: FULL IMAGE";
                 1:label="PALETTE: QUANTIZED";
-                2:label="HDMI TEST PATTERN: ON";
+                2:label=view_mode==8?"HDMI TEST PATTERN: OFF":"HDMI TEST PATTERN: ON";
                 3:label="BRIGHTNESS: 2";
                 4:label="CONTRAST: NORMAL";
                 5:label="TRANSITION: CUT";
@@ -72,12 +80,18 @@ module tb_game_menu_video;
                     if(ox==200&&oy==0&&rgb_o!==24'h0000ff)$fatal(1,"top calibration border");
                     if(ox==200&&oy==479&&rgb_o!==24'hffff00)$fatal(1,"bottom calibration border");
                 end
-                if((mode==1||mode==4||mode==5)&&ox>=192&&ox<448&&oy>=152&&oy<264&&!oy[3])begin
+                if((mode==1||mode==4||mode==5||mode==8)&&ox>=192&&ox<448&&oy>=152&&oy<264&&!oy[3])begin
                     reference_char=expected_char(mode,(oy-152)>>4,(ox-192)>>3);
                     reference_row=oy[2:0];
                     #0;
                     if((rgb_o==24'hffffff)!==((ox%8<5)&&reference_glyph[4-(ox%8)]))
                         $fatal(1,"menu glyph mode=%0d x=%0d y=%0d char=%0d",mode,ox,oy,reference_char);
+                end
+                if((mode==6||mode==7)&&ox>=192&&ox<448&&((oy>=88&&oy<96)||(oy>=432&&oy<440)))begin
+                    reference_char=expected_char(mode,oy<100?0:1,(ox-192)>>3);
+                    reference_row=oy[2:0];#0;
+                    if((rgb_o==24'hffffff)!==((ox%8<5)&&reference_glyph[4-(ox%8)]))
+                        $fatal(1,"gallery status glyph mode=%0d x=%0d y=%0d char=%0d",mode,ox,oy,reference_char);
                 end
                 if(rgb_o==24'hffffff)white_count=white_count+1;
                 if(outfile)$fwrite(outfile,"%c%c%c",rgb_o[23:16],rgb_o[15:8],rgb_o[7:0]);
@@ -109,12 +123,18 @@ module tb_game_menu_video;
         mode=5;page=2;debug_mode=1;view_narrow=0;palette_mode=1;osd_enable=1;calibration=1;
         frame("build/game_sim/menu_display.ppm");
         calibration=0;
+        mode=8;view_narrow=1;
+        frame("build/game_sim/menu_zoom.ppm");
         mode=2;debug_mode=1;page=1;
         frame("build/game_sim/menu_debug.ppm");
+        mode=6;auto_playing=1;cache_count=CACHE_SLOTS;
+        frame("build/game_sim/menu_auto_on.ppm");
+        mode=7;auto_playing=0;navigation_busy=1;cache_count=2;
+        frame("build/game_sim/menu_auto_paused.ppm");
         mode=3;active=0;debug_mode=0;calibration=1;
         frame("build/game_sim/menu_calibration.ppm");
-        $display("PASS menu video: 6 complete frames, independent menu glyphs, bypass coordinates, 2-clock sync, unobstructed Debug, calibration edges");
+        $display("PASS menu video: 9 complete frames, zoom/autoplay/loading glyphs, bypass, sync, unobstructed Debug, calibration edges");
         $finish;
     end
-    initial begin #30000000;$fatal(1,"menu video timeout");end
+    initial begin #45000000;$fatal(1,"menu video timeout");end
 endmodule

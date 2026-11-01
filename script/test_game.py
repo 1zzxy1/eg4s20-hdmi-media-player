@@ -35,8 +35,9 @@ def main():
         compiled.check_returncode()
         # Twenty full rasters took over 300 s on the validation host (16
         # completed before timeout). Keep the full coverage and a finite
-        # headroom budget; all other benches retain 180 s.
-        timeout = 600 if name == 'tb_game_scene' else 180
+        # headroom budget. The shared-decoder fault/retry test also exceeded
+        # 180 s with the sequential cache scan; retain all real-image checks.
+        timeout = 600 if name == 'tb_game_scene' or bench.stem == 'tb_game_asset_loader' else 180
         try:
             sim = subprocess.run(['vvp', str(exe)], cwd=ROOT, capture_output=True,
                                  text=True, timeout=timeout)

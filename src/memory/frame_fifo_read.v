@@ -3,6 +3,7 @@ module frame_fifo_read
 #
 (
 	parameter MEM_DATA_BITS          = 32,
+    parameter BANK_BITS = 2,
 	parameter ADDR_BITS              = 21,
 	parameter BURST_BITS             = 9,
 	parameter FIFO_DEPTH             = 512,
@@ -36,7 +37,8 @@ module frame_fifo_read
 	input[ADDR_BITS - 1:0]           read_addr_1,                // data read module read request base address 1, used when read_addr_index = 1
 	input[ADDR_BITS - 1:0]           read_addr_2,                // data read module read request base address 1, used when read_addr_index = 2
 	input[ADDR_BITS - 1:0]           read_addr_3,                // data read module read request base address 1, used when read_addr_index = 3
-	input[1:0]                       read_addr_index,            // select valid base address from read_addr_0 read_addr_1 read_addr_2 read_addr_3
+    input [ADDR_BITS-1:0] read_addr_4, read_addr_5,
+	input[BANK_BITS-1:0]             read_addr_index,            // select valid base address from read_addr_0 read_addr_1 read_addr_2 read_addr_3
 	input[ADDR_BITS - 1:0]           read_len,                   // data read module read request data length
 	output reg                       fifo_aclr,                  // to fifo asynchronous clear
 	input[9:0]                      wrusedw,                    // from fifo write used words
@@ -62,8 +64,8 @@ reg[ADDR_BITS - 1:0]                 read_len_d1;                //second
 reg[ADDR_BITS - 1:0]                 read_len_latch;             //lock read data length
 reg[ADDR_BITS - 1:0]                 read_cnt;                   //read data counter
 reg[3:0]                             state;                      //state machine
-reg[1:0]                             read_addr_index_d0;         //synchronize to 'mem_clk' clock domain first
-reg[1:0]                             read_addr_index_d1;         //synchronize to 'mem_clk' clock domain second
+reg[BANK_BITS-1:0]                   read_addr_index_d0;         //synchronize to 'mem_clk' clock domain first
+reg[BANK_BITS-1:0]                   read_addr_index_d1;         //synchronize to 'mem_clk' clock domain second
 reg [ADDR_BITS - 1:0]	 App_rd_addr_r;
 (* ASYNC_REG="TRUE" *) reg [9:0] offset_sync0,offset_sync1;
 reg [9:0] offset_latch,logical_x,source_x;
@@ -157,6 +159,10 @@ begin
 					App_rd_addr_r <= read_addr_2+(ALIGNMENT?aligned_offset:0);
 				else if(read_addr_index_d1 == 2'd3)
 					App_rd_addr_r <= read_addr_3+(ALIGNMENT?aligned_offset:0);
+				else if(read_addr_index_d1 == 3'd4)
+					App_rd_addr_r <= read_addr_4+(ALIGNMENT?aligned_offset:0);
+				else if(read_addr_index_d1 == 3'd5)
+					App_rd_addr_r <= read_addr_5+(ALIGNMENT?aligned_offset:0);
 			end
 		else if(App_rd_en)
             if(ALIGNMENT)begin

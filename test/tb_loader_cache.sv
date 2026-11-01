@@ -3,21 +3,24 @@
 // geometry is reduced for this scheduling test (full-size pixels are tested
 // independently by tb_loader_recovery and the frame-path/golden regressions).
 module tb_loader_cache;
-    reg clk=0,rst=1,key_next=1,key_auto=1,auto_enable=0,finished=0,ack=0,allow_ack=1;
+    reg clk=0,rst=1,key_next=1,key_previous=1,key_auto=1,auto_enable=0,zoom=0,finished=0,ack=0,allow_ack=1;
     always #10 clk=~clk;
     wire [3:0] state;
     wire valid,commit,wreq,we;
-    wire [1:0] wb,db;
+    wire [2:0] wb,db;
     wire [31:0] data;
     wire [6:0] index,count;
     wire [2:0] cached;
     integer pixels=0,finish_delay=0,ack_delay=0,loads=0;
     reg wreq_prev=0,have_front=0;
-    reg [1:0] front;
-    reg [3:0] complete=0;
-    reg [7:0] slot_id[0:3];
-    sd_card_bmp #(.CLK_FREQ_HZ(1000),.SCAN_START_SECTOR(2048),.SCAN_MAX_SECTOR(2200)) dut(
+    reg [2:0] front;
+    reg [5:0] complete=0;
+    reg [7:0] slot_id[0:5];
+    reg slot_zoom[0:5];
+    integer sx,sy;
+    sd_card_bmp #(.CLK_FREQ_HZ(1000),.CACHE_SLOTS(6),.BANK_BITS(3),.SCAN_START_SECTOR(2048),.SCAN_MAX_SECTOR(2200)) dut(
         .clk(clk),.rst(rst),.key_next(key_next),.key_auto(key_auto),.auto_enable(auto_enable),.state_code(state),
+        .key_previous(key_previous),.view_zoom(zoom),
         .bmp_width(16'd640),.bmp_height(16'd480),.display_valid(valid),
         .write_finish_toggle(finished),.display_ack_toggle(ack),.display_commit_toggle(commit),
         .write_buf_idx(wb),.disp_buf_idx(db),.write_req(wreq),.write_req_ack(wreq),
@@ -31,10 +34,14 @@ module tb_loader_cache;
         if(wreq && !wreq_prev) begin
             if(have_front && wb==front) $fatal(1,"write request to active slot");
             pixels=0;complete[wb]=0;loads=loads+1;
+            slot_zoom[wb]=dut.load_zoom;
         end
         if(we) begin
             if(have_front && wb==front) $fatal(1,"pixel write to active slot");
-            if(data[23:0]!==24'h201000) $fatal(1,"pixel ordering/scaling changed");
+            sx=slot_zoom[wb] ? 2+(pixels%8)/2 : pixels%8;
+            sy=slot_zoom[wb] ? 8+(pixels/8)*4 : (pixels/8)*8;
+            if(data[23:16]!==8'(32+sy) || data[15:8]!==8'(16+sx) || data[7:0]!==0)
+                $fatal(1,"loader zoom pixels mismatch pixel=%0d zoom=%0d data=%h",pixels,slot_zoom[wb],data);
             if(pixels==0) slot_id[wb]=data[31:24];
             else if(slot_id[wb]!=data[31:24]) $fatal(1,"mixed image in slot");
             pixels=pixels+1;
@@ -53,6 +60,7 @@ module tb_loader_cache;
     task tick;begin @(negedge clk);end endtask
     task press;begin key_next=0;repeat(26)tick();key_next=1;repeat(26)tick();end endtask
     task press_auto;begin key_auto=0;repeat(26)tick();key_auto=1;repeat(26)tick();end endtask
+    task press_previous;begin key_previous=0;repeat(26)tick();key_previous=1;repeat(26)tick();end endtask
     task await_index(input integer expected);
         integer timeout;
         begin
@@ -66,8 +74,8 @@ module tb_loader_cache;
         integer timeout;
         begin
             timeout=0;
-            while(cached!=4 && timeout<50000) begin tick();timeout=timeout+1;end
-            if(cached!=4) $fatal(1,"prefetch did not fill cache");
+            while(cached!=5 && timeout<50000) begin tick();timeout=timeout+1;end
+            if(cached!=5) $fatal(1,"prefetch did not fill cache");
         end
     endtask
     integer before_requests;
@@ -84,17 +92,27 @@ module tb_loader_cache;
         press();await_index(6);await_full();
         press();await_index(1);await_full();
         press();await_index(2);await_full();
+        before_requests=dut.internal_card.sd_card_top_m0.served;
+        press_previous();await_index(1);press();await_index(2);
+        if(dut.internal_card.sd_card_top_m0.served!=before_requests)$fatal(1,"reverse resident image read SD");
         auto_enable=1;repeat(4)tick();
         if(!dut.auto_play_en)$fatal(1,"opening gallery must start autoplay");
+        repeat(2000)tick();
+        if(index!=2)$fatal(1,"autoplay advanced before three seconds");
         await_index(4);
         press_auto();repeat(4)tick();
         if(dut.auto_play_en)$fatal(1,"KEY1 must pause autoplay");
         await_full();
-        repeat(1200)tick();
+        repeat(3200)tick();
         if(index!=4)$fatal(1,"paused gallery advanced");
         auto_enable=0;repeat(4)tick();auto_enable=1;repeat(4)tick();
         if(!dut.auto_play_en)$fatal(1,"reopening gallery must restart autoplay");
-        $display("PASS loader cache: six-image scan/marker, ack-gated refill, wrap, automatic one-second autoplay and KEY1 pause");
+        auto_enable=0;repeat(4)tick();zoom=1;repeat(8)tick();await_full();repeat(30)tick();
+        if(!slot_zoom[front])$fatal(1,"loader view setting did not replace actual frame");
+        before_requests=dut.internal_card.sd_card_top_m0.served;
+        press_previous();await_index(2);press();await_index(4);
+        if(dut.internal_card.sd_card_top_m0.served!=before_requests)$fatal(1,"zoomed neighbours not preloaded");
+        $display("PASS loader cache: scan/marker, ack-gated refill, wrap, three-second autoplay and KEY1 pause");
         $finish;
     end
     initial begin #20000000;$fatal(1,"loader cache timeout index=%0d cache=%0d",index,cached);end
@@ -116,7 +134,7 @@ module sd_card_top(input wire clk,rst,output wire SD_nCS,SD_DCLK,SD_MOSI,input w
                 0:byte_at="B";1:byte_at="M";2:byte_at=54;3:byte_at=3;10:byte_at=54;
                 14:byte_at=40;18:byte_at=8;22:byte_at=32;26:byte_at=1;28:byte_at=24;
                 default: if(p>=54 && p<822) case((p-54)%3)
-                    0:byte_at=16;1:byte_at=32;2:byte_at=image;
+                    0:byte_at=16+((p-54)/3)%8;1:byte_at=32+((p-54)/3)/8;2:byte_at=image;
                 endcase
             endcase
         end

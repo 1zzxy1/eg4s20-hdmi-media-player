@@ -13,19 +13,21 @@ def bmp(w,h,offset=54):
     header=struct.pack('<2sIHHI',b'BM',offset+len(pixels),0,0,offset)+struct.pack('<IiiHHIIiiII',40,w,h,1,24,0,len(pixels),0,0,0,0)
     return header+bytes(offset-54)+pixels
 
-def golden_bmp(data,w,h,ow,oh):
+def golden_bmp(data,w,h,ow,oh,zoom=False):
     # Independent random access definition, no RTL accumulator algorithm.
     offset=struct.unpack_from('<I',data,10)[0];stride=(w*3+3)&~3
     rows=[]
     for y in range(oh):
         for x in range(ow):
-            pos=offset+(y*h//oh)*stride+(x*w//ow)*3
+            sx=(w//4+x*max(1,w//2)//ow) if zoom else x*w//ow
+            sy=(h//4+y*max(1,h//2)//oh) if zoom else y*h//oh
+            pos=offset+sy*stride+sx*3
             b,g,r=data[pos:pos+3];rows.append(f'{r:02x}{g:02x}{b:02x}\n')
     return ''.join(rows)
 
-def run_case(w,h,ow=32,oh=24,offset=54,bad=False,short=False,silent=False,negative=False,corruption='',scaling=True):
-    name=f'bmp_{w}_{h}_{ow}_{oh}_{offset}_{int(bad)}{int(short)}{int(silent)}{int(negative)}_{corruption}_{int(scaling)}'
-    data=bmp(w,h,offset);gold=golden_bmp(data,w,h,ow,oh)
+def run_case(w,h,ow=32,oh=24,offset=54,bad=False,short=False,silent=False,negative=False,corruption='',scaling=True,zoom=False):
+    name=f'bmp_{w}_{h}_{ow}_{oh}_{offset}_{int(bad)}{int(short)}{int(silent)}{int(negative)}_{corruption}_{int(scaling)}_z{int(zoom)}'
+    data=bmp(w,h,offset);gold=golden_bmp(data,w,h,ow,oh,zoom)
     if bad:data=data[:28]+b'\x10\x00'+data[30:]
     if corruption:
         changes={'width_zero':(18,0),'height_negative':(22,0xffffffff),'width_over':(18,1921),
@@ -37,7 +39,7 @@ def run_case(w,h,ow=32,oh=24,offset=54,bad=False,short=False,silent=False,negati
     image=OUT/(name+'.hex');expected=OUT/(name+'.rgb');exe=OUT/(name+'.vvp')
     image.write_text(''.join(f'{b:02x}\n' for b in data));expected.write_text(gold)
     cmd=['iverilog','-g2012','-s','tb_scaled_bmp',f'-Ptb_scaled_bmp.W={ow}',f'-Ptb_scaled_bmp.H={oh}',
-         f'-Ptb_scaled_bmp.FILE_BYTES={len(data)}',f'-Ptb_scaled_bmp.SCALING={int(scaling)}','-o',str(exe),'src/storage/bmp_sector_player.v','test/tb_scaled_bmp.sv']
+         f'-Ptb_scaled_bmp.FILE_BYTES={len(data)}',f'-Ptb_scaled_bmp.SCALING={int(scaling)}',f'-Ptb_scaled_bmp.ZOOM={int(zoom)}','-o',str(exe),'src/storage/bmp_sector_player.v','test/tb_scaled_bmp.sv']
     subprocess.run(cmd,cwd=ROOT,check=True,capture_output=True)
     result=subprocess.run(['vvp',str(exe),f'+IMAGE={image.as_posix()}',f'+GOLDEN={expected.as_posix()}',
         f'+BAD={int(bad)}',f'+SHORT={int(short)}',f'+SILENT={int(silent)}',f'+NEGATIVE={int(negative)}'],
@@ -75,6 +77,7 @@ def main():
     cases=[(1,1),(3,2),(319,241),(641,479),(800,600),(1920,1440)]
     results=[]
     for w,h in cases:results.append(run_case(w,h))
+    for w,h in [(1,1),(7,5),(640,480),(1920,1440)]:results.append(run_case(w,h,zoom=True))
     results.append(run_case(3,2,640,480))
     results.append(run_case(640,480,640,480))
     results.append(run_case(7,5,offset=510))

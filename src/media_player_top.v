@@ -81,6 +81,7 @@ module media_player_top(
     wire [23:0] adjusted_media;
     wire active_valid;
     wire [2:0] cache_count;
+    wire gallery_playing,gallery_busy;
     wire [6:0] image_index,image_count;
     wire [4:0] fade_gain;
     wire [1:0] effect_mode;
@@ -91,6 +92,7 @@ module media_player_top(
     media_gallery u_gallery(.sd_clk(sd_clk),.mem_clk(mem_clk),.mem_clk_shift(mem_clk_shift),
         .pix_clk(pix_clk),.rst_sd(rst_sd),.rst_mem(rst_mem),.rst_pix(rst_pix),
         .initialized(sd_audio_initialized),.assets_ready(assets_loaded),.enabled(debug_mode),
+        .view_zoom(view_narrow),.auto_playing(gallery_playing),.navigation_busy(gallery_busy),
         .auto_enable(game_state==0&&frame_switches[0]&&!frame_switches[2]&&!frame_switches[3]),
         .next_key_n(next_key_n),.previous_key_n(previous_key_n),.auto_key_n(auto_key_n),
         .hs(raw_hs),.vs(raw_vs),.de(raw_de),.frame_request(read_req),
@@ -386,7 +388,8 @@ module media_player_top(
         .cache_count(cache_count),.image_index(image_index),.image_count(image_count),
         .control_contrast(alignment_block?2'd0:display_contrast),.control_transition(display_transition),
         .hs_o(fx_hs),.vs_o(fx_vs),.de_o(fx_de),.rgb_o(fx_rgb));
-    game_menu_video #(.ALIGNMENT(1)) u_menu_video(.clk(pix_clk),.rst(rst_pix),
+    game_menu_video #(.ALIGNMENT(1),.CACHE_SLOTS(5)) u_menu_video(.clk(pix_clk),.rst(rst_pix),
+        .auto_playing(gallery_playing),.navigation_busy(gallery_busy),
         .hs(fx_hs),.vs(fx_vs),.de(fx_de),.rgb(fx_rgb),.alignment_offset(alignment_offset),
         .active(lab_active&&!alignment_block),.debug_mode(debug_mode),.media_fullscreen(media_fullscreen),
         .calibration(calibration&&!alignment_block),.page(menu_page),.selection(menu_selection),

@@ -4,16 +4,18 @@
 module tb_frame_path #(
     parameter integer DISPLAY_SLOT = 2,
     parameter integer ALIGN_OFFSET = -1,
-    parameter integer FREE_RASTER = 0
+    parameter integer FREE_RASTER = 0,
+    parameter integer BANKS = 4
 );
     localparam integer FRAME_WORDS = 307200;
-    localparam integer BACKGROUND_SLOT = (DISPLAY_SLOT + 1) % 4;
+    localparam integer BACKGROUND_SLOT = (DISPLAY_SLOT + 1) % BANKS;
+    localparam BANK_BITS=BANKS>4?3:2;
     reg mc=0,wc=0,pc=0,rst=1,vrst=1;
     always #12.5 mc=~mc;always #10 wc=~wc;always #20 pc=~pc;
     wire wa,wfinish,wready,re,ra,rfinish,app_r,app_w,read_en;
     wire busy,refresh,initialized,returned;wire [31:0] returned_data;
-    reg [1:0] write_bank_select=DISPLAY_SLOT;
-    wire [1:0] read_bank_select=DISPLAY_SLOT;
+    reg [BANK_BITS-1:0] write_bank_select=DISPLAY_SLOT;
+    wire [BANK_BITS-1:0] read_bank_select=DISPLAY_SLOT;
     integer concurrent_writes=0;
 `ifdef BMP_SOURCE
     wire wreq,we;wire [31:0] wd;
@@ -53,7 +55,7 @@ module tb_frame_path #(
 `endif
     wire [20:0] raddr,waddr;wire [31:0] app_data,read_data;wire [3:0] mask;
     wire hs,vs,de,ho,vo,dout;wire [23:0] pixel;
-    reg [31:0] memory[0:4*FRAME_WORDS-1];
+    reg [31:0] memory[0:BANKS*FRAME_WORDS-1];
     reg [3:0] latency=0;reg [31:0] pipe[0:3];
     reg [1:0] ack_sync=0;
     reg read_started=0;
@@ -81,14 +83,16 @@ module tb_frame_path #(
     assign refresh=busy;assign initialized=!rst;
     assign returned=latency[3];assign returned_data=pipe[3];
 `endif
-    frame_read_write #(.BURST_SIZE(128),.ALIGNMENT(ALIGN_OFFSET>=0)) dut(.rst(rst),.mem_clk(mc),.Sdr_init_done(initialized),
+    frame_read_write #(.BURST_SIZE(128),.ALIGNMENT(ALIGN_OFFSET>=0),.BANK_BITS(BANK_BITS)) dut(.rst(rst),.mem_clk(mc),.Sdr_init_done(initialized),
         .Sdr_init_ref_vld(refresh),.Sdr_busy(busy),.App_rd_en(app_r),.App_rd_addr(raddr),
         .Sdr_rd_en(returned),.Sdr_rd_dout(returned_data),.read_clk(pc),.read_req(dma_request),.read_req_ack(ra),
         .read_finish(rfinish),.read_addr_0(21'd0),.read_addr_1(21'd307200),.read_addr_2(21'd614400),.read_addr_3(21'd921600),
+        .read_addr_4(21'd1228800),.read_addr_5(21'd1536000),
         .read_addr_index(read_bank_select),.read_len(21'd307200),.read_en(read_en),.read_data(read_data),
         .App_wr_en(app_w),.App_wr_addr(waddr),.App_wr_din(app_data),.App_wr_dm(mask),
         .write_clk(wc),.write_req(wreq),.write_req_ack(wa),.write_finish(wfinish),
         .write_addr_0(21'd0),.write_addr_1(21'd307200),.write_addr_2(21'd614400),.write_addr_3(21'd921600),
+        .write_addr_4(21'd1228800),.write_addr_5(21'd1536000),
         .write_addr_index(write_bank_select),.write_len(21'd307200),.write_en(we),.write_data(wd),.write_ready(wready),
         .alignment_offset(offset_value));
     always @(posedge pc) begin
@@ -137,7 +141,7 @@ module tb_frame_path #(
         end
     end
     initial begin
-        if(DISPLAY_SLOT<0 || DISPLAY_SLOT>3) $fatal(1,"DISPLAY_SLOT must be 0..3");
+        if(DISPLAY_SLOT<0 || DISPLAY_SLOT>=BANKS) $fatal(1,"DISPLAY_SLOT out of range");
 `ifdef BMP_SOURCE
         repeat(8)@(negedge wc);rst=0;wait(initialized);repeat(4)@(negedge wc);
         bmp_start=1;@(negedge wc);bmp_start=0;

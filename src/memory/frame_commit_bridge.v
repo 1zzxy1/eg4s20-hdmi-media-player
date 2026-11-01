@@ -1,10 +1,10 @@
 // Bundled-data handshake. Source holds bank/valid from commit until ack.
 // Destination captures only when the video reader requests a new frame.
-module frame_commit_bridge(
+module frame_commit_bridge #(parameter BANK_BITS=2)(
     input wire clk, input wire rst,
-    input wire commit_toggle, input wire [1:0] pending_bank,
+    input wire commit_toggle, input wire [BANK_BITS-1:0] pending_bank,
     input wire frame_request, input wire commit_hold,
-    output reg [1:0] active_bank, output reg active_valid,
+    output reg [BANK_BITS-1:0] active_bank, output reg active_valid,
     output reg ack_toggle,
     input wire reader_ack
 );

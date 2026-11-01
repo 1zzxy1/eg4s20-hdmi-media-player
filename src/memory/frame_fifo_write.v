@@ -3,6 +3,7 @@ module frame_fifo_write
 #
 (
 	parameter MEM_DATA_BITS          = 32,
+    parameter BANK_BITS = 2,
 	parameter ADDR_BITS              = 21,
 	parameter BURST_BITS             = 9,
 	parameter BURST_SIZE             = 128,
@@ -35,7 +36,8 @@ module frame_fifo_write
 	input[ADDR_BITS - 1:0]           write_addr_1,               // data write module write request base address 1, used when write_addr_index = 1
 	input[ADDR_BITS - 1:0]           write_addr_2,               // data write module write request base address 1, used when write_addr_index = 2
 	input[ADDR_BITS - 1:0]           write_addr_3,               // data write module write request base address 1, used when write_addr_index = 3
-	input[1:0]                       write_addr_index,           // select valid base address from write_addr_0 write_addr_1 write_addr_2 write_addr_3
+    input [ADDR_BITS-1:0] write_addr_4, write_addr_5,
+	input[BANK_BITS-1:0]             write_addr_index,           // select valid base address from write_addr_0 write_addr_1 write_addr_2 write_addr_3
 	input[ADDR_BITS - 1:0]           write_len,                  // data write module write request data length
 	output reg                       fifo_aclr,                  // to fifo asynchronous clear
 	input[9:0]                      rdusedw                     // from fifo read used words
@@ -66,8 +68,8 @@ reg[ADDR_BITS - 1:0]                write_len_d0;                //asynchronous 
 reg[ADDR_BITS - 1:0]                write_len_d1;                //second
 reg[ADDR_BITS - 1:0]                write_len_latch;             //lock write data length
 reg[ADDR_BITS - 1:0]                write_cnt;                   //write data counter
-reg[1:0]                            write_addr_index_d0;
-reg[1:0]                            write_addr_index_d1;
+reg[BANK_BITS-1:0]                  write_addr_index_d0;
+reg[BANK_BITS-1:0]                  write_addr_index_d1;
 reg[3:0]                            state;                       //state machine
 reg [ADDR_BITS - 1:0]	 App_wr_addr_r;
 reg [15:0]                            wr_x;                       // current x position in one input row
@@ -142,6 +144,10 @@ begin
 					App_wr_addr_r <= WRITE_V_FLIP ? (write_addr_2 + VFLIP_FIRST_ADDR_OFFSET) : write_addr_2;
 				else if(write_addr_index_d1 == 2'd3)
 					App_wr_addr_r <= WRITE_V_FLIP ? (write_addr_3 + VFLIP_FIRST_ADDR_OFFSET) : write_addr_3;
+				else if(write_addr_index_d1 == 3'd4)
+					App_wr_addr_r <= WRITE_V_FLIP ? (write_addr_4 + VFLIP_FIRST_ADDR_OFFSET) : write_addr_4;
+				else if(write_addr_index_d1 == 3'd5)
+					App_wr_addr_r <= WRITE_V_FLIP ? (write_addr_5 + VFLIP_FIRST_ADDR_OFFSET) : write_addr_5;
 			end
 		else if(App_wr_en)
 			begin

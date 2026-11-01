@@ -5,6 +5,7 @@ module bmp_sector_player #(
     parameter TIMEOUT_CYCLES=100_000_000
 )(
     input wire clk, rst, sd_init_done,
+    input wire view_zoom,
     input wire scan_start, input wire [31:0] scan_start_sector, scan_max_sector,
     input wire [6:0] scan_target_count,
     output reg scan_done, scan_found_valid,
@@ -18,7 +19,7 @@ module bmp_sector_player #(
     input wire [7:0] sd_sec_read_data, input wire sd_sec_read_data_valid, sd_sec_read_end
 );
     localparam IDLE=0, FETCH=1, HEADER=2, GEOMETRY=3, VALIDATE=4, ACK=5,
-        BYTE=6, BYTE_WAIT=7, BYTE_USE=8, PIXEL=9, XSTEP=10, YSTEP=11;
+        BYTE=6, BYTE_WAIT=7, BYTE_USE=8, PIXEL=9, XSTEP=10, YSTEP=11, CROP=12;
     reg [3:0] state, after_fetch;
     reg scanning, cache_valid;
     reg [31:0] base_sector, cache_sector, scan_limit;
@@ -36,6 +37,11 @@ module bmp_sector_player #(
     reg [22:0] row_base, byte_ptr;
     reg [10:0] dx, dy;
     reg [12:0] x_acc, y_acc;
+    reg zoom_latch;
+    reg [8:0] crop_rows;
+    wire [12:0] sample_width=zoom_latch ? (width[10:0]<2?13'd1:{2'd0,width[11:1]}) : width[12:0];
+    wire [12:0] sample_height=zoom_latch ? (height[10:0]<2?13'd1:{2'd0,height[11:1]}) : height[12:0];
+    wire [10:0] crop_x_bytes={1'b0,width[10:2],1'b0}+{2'b0,width[10:2]};
     reg [1:0] channel;
     reg [$clog2(TIMEOUT_CYCLES+1)-1:0] watchdog;
     wire [31:0] wanted_sector = base_sector + (byte_ptr >> 9);
@@ -61,6 +67,7 @@ module bmp_sector_player #(
             magic<=0; planes<=0; bpp<=0; length<=0; offset<=0; dib<=0;
             width<=0; height<=0; compression<=0; row_stride<=0; required_size<=0;
             row_base<=0; byte_ptr<=0; dx<=0; dy<=0; x_acc<=0; y_acc<=0; channel<=0;
+            zoom_latch<=0;crop_rows<=0;
             watchdog<=0; scan_done<=0; scan_found_valid<=0; scan_found_sector<=0;
             scan_found_total<=0; write_req<=0; bmp_data<=0; load_done<=0;
             error_code<=0; sd_sec_read<=0; sd_sec_read_addr<=0;
@@ -77,6 +84,7 @@ module bmp_sector_player #(
                 IDLE: begin
                     sd_sec_read<=0; write_req<=0;
                     if(scan_start || load_start) begin
+                        zoom_latch<=ENABLE_SCALE && (view_zoom===1'b1) && !scan_start;
                         error_code<=0; cache_valid<=0; count<=0;
                         scanning<=scan_start; state<=FETCH; after_fetch<=HEADER;
                         sd_sec_read<=1;
@@ -117,7 +125,7 @@ module bmp_sector_player #(
                     end
                 end
                 HEADER: begin
-                    row_stride<=ENABLE_SCALE ? (((width*3+3)>>2)<<2) : ((OUT_WIDTH*3+3)/4)*4;
+                    row_stride<=ENABLE_SCALE ? (((width[10:0]*13'd3+13'd3)>>2)<<2) : ((OUT_WIDTH*3+3)/4)*4;
                     state<=GEOMETRY;
                 end
                 GEOMETRY: begin
@@ -141,10 +149,14 @@ module bmp_sector_player #(
                     end else if(!good) begin error_code<=1; state<=IDLE; end
                     else begin
                         write_req<=1; state<=ACK; dx<=0;dy<=0;x_acc<=0;y_acc<=0;
-                        row_base<=offset; byte_ptr<=offset; channel<=0;
+                        row_base<=offset+(zoom_latch?crop_x_bytes:23'd0);
+                        byte_ptr<=offset;channel<=0;crop_rows<=zoom_latch?height[10:2]:9'd0;
                     end
                 end
-                ACK: if(write_req_ack) begin write_req<=0;state<=BYTE;end
+                ACK: if(write_req_ack) begin write_req<=0;state<=CROP;end
+                // Add one source row per cycle, avoiding another DSP multiplier.
+                CROP: if(crop_rows!=0) begin row_base<=row_base+row_stride;crop_rows<=crop_rows-1'b1;end
+                    else begin byte_ptr<=row_base;state<=BYTE;end
                 BYTE: if(cache_valid && cache_sector==wanted_sector) state<=BYTE_WAIT;
                     else begin
                         after_fetch<=BYTE; count<=0; sd_sec_read_addr<=wanted_sector;
@@ -164,8 +176,8 @@ module bmp_sector_player #(
                     // byte_ptr points at R; rewind to B before moving the source X.
                     byte_ptr<=byte_ptr-2;
                     if(dx==OUT_WIDTH-1) begin
-                        dx<=0;x_acc<=0;y_acc<=ENABLE_SCALE ? y_acc+height[12:0] : 13'd0;state<=YSTEP;
-                    end else if(ENABLE_SCALE) begin dx<=dx+1'b1;x_acc<=x_acc+width[12:0];state<=XSTEP;end
+                        dx<=0;x_acc<=0;y_acc<=ENABLE_SCALE ? y_acc+sample_height : 13'd0;state<=YSTEP;
+                    end else if(ENABLE_SCALE) begin dx<=dx+1'b1;x_acc<=x_acc+sample_width;state<=XSTEP;end
                     else begin dx<=dx+1'b1;byte_ptr<=byte_ptr+1;state<=BYTE;end
                 end
                 XSTEP: if(x_acc>=OUT_WIDTH) begin x_acc<=x_acc-OUT_WIDTH;byte_ptr<=byte_ptr+3;end

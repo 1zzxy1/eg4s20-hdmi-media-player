@@ -1,6 +1,6 @@
 // Synchronous character ROM replaces the wide menu string mux.
 // RGB and sync take the same two clocks; Debug leaves its preview unobstructed.
-module game_menu_video #(parameter ALIGNMENT=0)(input wire clk,rst,hs,vs,de,input wire [23:0] rgb,
+module game_menu_video #(parameter ALIGNMENT=0, CACHE_SLOTS=6)(input wire clk,rst,hs,vs,de,input wire [23:0] rgb,
     input wire [9:0] alignment_offset,
     input wire active,debug_mode,media_fullscreen,calibration,
     input wire [2:0] page,selection,
@@ -11,6 +11,7 @@ module game_menu_video #(parameter ALIGNMENT=0)(input wire clk,rst,hs,vs,de,inpu
     input wire [15:0] audio_underruns,audio_dropped,
     input wire [1:0] contrast,transition_mode,
     input wire assets_ready,image_ready,
+    input wire auto_playing,navigation_busy,
     input wire [6:0] image_index,image_count,input wire [2:0] cache_count,
     output reg hs_o,vs_o,de_o,output reg [23:0] rgb_o);
     reg vd,dd;
@@ -39,7 +40,7 @@ module game_menu_video #(parameter ALIGNMENT=0)(input wire clk,rst,hs,vs,de,inpu
             10:message="NAME AND AVATAR";
             11:message="LEADERBOARD";
             12:message="RESTART";
-            13:message="GAME VIEW: WIDE / FULL SCREEN";
+            13:message="VIEW: FULL IMAGE";
             14:message="PALETTE: ORIGINAL";
             15:message="HDMI TEST PATTERN: OFF";
             16:message="BRIGHTNESS: 0";
@@ -56,7 +57,7 @@ module game_menu_video #(parameter ALIGNMENT=0)(input wire clk,rst,hs,vs,de,inpu
             27:message="K4 CONFIRM - K1 CANCEL";
             28:message="SW2 TEXT/SCOPE - K4 NAME";
             29:message="K2 PREV K3 NEXT K1 AUTO";
-            30:message="IMG:00/00 CACHE:0 ATLAS:WAIT";
+            30:message="IMG:00/00 CACHE:0 AUTO:PAUSED 3S";
             31:message="SD PCM: W UNDER:0000 DROP:0000";
             default:message=0;
         endcase end
@@ -129,9 +130,13 @@ module game_menu_video #(parameter ALIGNMENT=0)(input wire clk,rst,hs,vs,de,inpu
                             default:dynamic_char=32;
                         endcase
                     end
-                    13:if(column>=11&&column<=14&&view_narrow)begin
+                    13:if(column>=6&&view_narrow)begin
                         dynamic_on=1;
-                        dynamic_char="ZOOM" >> ((14-column)*8);
+                        case(column)
+                            6:dynamic_char="C";7:dynamic_char="E";8:dynamic_char="N";
+                            9:dynamic_char="T";10:dynamic_char="E";11:dynamic_char="R";
+                            13:dynamic_char="2";14:dynamic_char="X";default:dynamic_char=32;
+                        endcase
                     end
                     17:if(column>=10)begin
                         dynamic_on=1;
@@ -169,6 +174,14 @@ module game_menu_video #(parameter ALIGNMENT=0)(input wire clk,rst,hs,vs,de,inpu
                         if(column>=16&&column<20)begin dynamic_on=1;dynamic_char=digit(audio_underruns>>((19-column)*4));end
                         if(column>=26&&column<30)begin dynamic_on=1;dynamic_char=digit(audio_dropped>>((29-column)*4));end
                     end
+                    29:if(column>=25)begin
+                        dynamic_on=1;
+                        if(navigation_busy||cache_count<(image_count<CACHE_SLOTS?image_count:CACHE_SLOTS))case(column)
+                            25:dynamic_char="L";26:dynamic_char="O";27:dynamic_char="A";
+                            28:dynamic_char="D";29:dynamic_char="I";30:dynamic_char="N";
+                            31:dynamic_char="G";default:dynamic_char=32;
+                        endcase
+                    end
                     30:begin
                         if(column==4||column==5||column==7||column==8||column==16)begin
                             dynamic_on=1;
@@ -178,8 +191,8 @@ module game_menu_video #(parameter ALIGNMENT=0)(input wire clk,rst,hs,vs,de,inpu
                                 16:dynamic_char=digit({1'b0,cache_count});
                             endcase
                         end
-                        if(column>=24&&column<28)begin dynamic_on=1;
-                            dynamic_char=(assets_ready?"OK  ":image_ready?"BAD ":"WAIT") >> ((27-column)*8);
+                        if(column>=23&&column<29&&auto_playing)begin dynamic_on=1;
+                            dynamic_char=column==23?"O":column==24?"N":8'd32;
                         end
                     end
                 endcase

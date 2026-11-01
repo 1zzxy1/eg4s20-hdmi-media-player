@@ -1,23 +1,26 @@
 `timescale 1ns/1ps
 module tb_image_cache;
-    reg clk=0,rst=1,catalog=0,next_req=0,previous_req=0;
+    parameter SLOTS=4,BANK_BITS=SLOTS>4?3:2;
+    reg clk=0,rst=1,catalog=0,next_req=0,previous_req=0,zoom=0;
     always #5 clk=~clk;
     reg [6:0] count=6;
     reg ready=1,source_done=0,source_error=0,write_started=0,memory_done=0;
-    wire load_start,commit,valid;
+    wire load_start,commit,valid,load_zoom,navigation_busy;
     wire [5:0] load_image;
-    wire [1:0] load_slot,pending_slot;
+    wire [BANK_BITS-1:0] load_slot,pending_slot;
     wire [6:0] image_index;
     wire [2:0] cached;
     reg ack=0,allow_ack=1,hold_memory=0;
     reg [63:0] failures=0;
     integer loads=0,age=0,ack_age=0,commits=0;
     reg model_busy=0,have_active=0;
-    reg [1:0] model_slot,active_slot;
+    reg [BANK_BITS-1:0] model_slot,active_slot;
     reg [5:0] model_image;
-    reg [3:0] complete=0;
-    reg [5:0] contents[0:3];
-    image_cache_controller dut(
+    reg [SLOTS-1:0] complete=0;
+    reg [5:0] contents[0:SLOTS-1];
+    reg modes[0:SLOTS-1];
+    image_cache_controller #(.SLOTS(SLOTS),.BANK_BITS(BANK_BITS)) dut(
+        .view_zoom(zoom),.load_zoom(load_zoom),.navigation_busy(navigation_busy),
         .clk(clk),.rst(rst),.catalog_ready(catalog),.catalog_count(count),.next_request(next_req),
         .previous_request(previous_req),
         .loader_ready(ready),.source_done(source_done),.source_error(source_error),
@@ -41,6 +44,7 @@ module tb_image_cache;
                 ready=0;model_busy=1;age=0;loads=loads+1;
                 model_slot=load_slot;model_image=load_image;complete[load_slot]=0;
                 contents[load_slot]=load_image;
+                modes[load_slot]=load_zoom;
             end
             if(model_busy) begin
                 age=age+1;
@@ -91,6 +95,32 @@ module tb_image_cache;
     endtask
     integer k,saved;
     initial begin
+        if(SLOTS>=5)begin
+            reset_case(SLOTS,0);await_index(1);await_cache(SLOTS);saved=loads;
+            for(k=0;k<3*SLOTS;k=k+1)begin
+                request_previous();await_index(((SLOTS*8-1-k)%SLOTS)+1);
+                request_next();await_index(((SLOTS*8-k)%SLOTS)+1);
+                request_previous();await_index(((SLOTS*8-1-k)%SLOTS)+1);
+            end
+            if(loads!=saved)$fatal(1,"resident six-image album reloaded while navigating");
+            zoom=1;repeat(3)tick();
+            if(!valid)$fatal(1,"zoom blanked current frame");
+            await_cache(SLOTS);repeat(20)tick();
+            if(!modes[active_slot] || loads!=saved+SLOTS)$fatal(1,"zoom did not rebuild all six slots");
+            saved=loads;request_next();await_index(2);request_previous();await_index(1);
+            if(loads!=saved)$fatal(1,"zoomed neighbours missed cache");
+            // Change mode while the display is deliberately holding a commit.
+            allow_ack=0;request_next();repeat(10)tick();zoom=0;repeat(40)tick();
+            if(!complete[pending_slot])$fatal(1,"mode change recycled unacknowledged frame");
+            allow_ack=1;await_cache(SLOTS);repeat(30)tick();
+            if(modes[active_slot])$fatal(1,"latest zoom request was lost during pending display");
+            reset_case(64,0);await_index(1);await_cache(SLOTS);repeat(1000)tick();saved=loads;
+            repeat(1000)tick();if(loads!=saved)$fatal(1,"bidirectional prefetch thrashes");
+            request_previous();await_index(64);request_next();await_index(1);
+            if(loads!=saved)$fatal(1,"both immediate neighbours must be preloaded");
+            $display("PASS %0d-slot cache: bidirectional hits, zoom rebuild, pending-frame safety, bounded large-album prefetch",SLOTS);
+            $finish;
+        end
         reset_case(6,0);await_index(1);await_cache(4);repeat(5)tick();
         if(loads!=4) $fatal(1,"four-slot prefetch did not stop");
         allow_ack=0;saved=loads;request_next();repeat(30)tick();
@@ -123,8 +153,8 @@ module tb_image_cache;
         repeat(100)tick();
         if(image_index!=1 || !valid || have_active==0 || active_slot!=dut.current_slot)
             $fatal(1,"backward miss released active slot before display ack");
-        if(loads!=5 || commit==ack)
-            $fatal(1,"backward wrap must load uncached image six then request display");
+        if(loads!=4 || commit==ack)
+            $fatal(1,"backward neighbour must already be resident");
         allow_ack=1;await_index(6);await_cache(4);
         request_previous();await_index(5);await_cache(4);
         request_next();await_index(6);await_cache(4);

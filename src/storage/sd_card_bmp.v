@@ -3,6 +3,8 @@ module sd_card_bmp #(
     parameter ENABLE_SCALE = 1,
     parameter EXTERNAL_CARD = 0,
     parameter BOOT_ATLAS = 0,
+    parameter CACHE_SLOTS = 4, BANK_BITS = 2,
+    parameter AUTO_SECONDS = 3,
     parameter [31:0] ATLAS_LBA = 32'd2337,
     parameter ATLAS_RETRY_CYCLES = 2_500_000,
     parameter [31:0] SCAN_START_SECTOR = 32'd0,
@@ -15,7 +17,9 @@ module sd_card_bmp #(
     output display_valid,
     input write_finish_toggle, display_ack_toggle,
     output display_commit_toggle,
-    output [1:0] write_buf_idx, disp_buf_idx,
+    output [BANK_BITS-1:0] write_buf_idx, disp_buf_idx,
+    input wire view_zoom,
+    output wire auto_playing,navigation_busy,
     output write_req,
     input write_req_ack, write_ready,
     output write_en,
@@ -63,10 +67,13 @@ module sd_card_bmp #(
     reg scan_kicked, scan_start_pulse, bmp_ready_prev;
     reg auto_play_en;
     reg auto_enable_prev;
-    reg [$clog2(CLK_FREQ_HZ)-1:0] auto_count;
+    localparam AUTO_CYCLES=CLK_FREQ_HZ*AUTO_SECONDS;
+    reg [$clog2(AUTO_CYCLES)-1:0] auto_count;
     (* ASYNC_REG="TRUE" *) reg [2:0] finish_sync, display_ack_sync;
     wire load_start;
     wire [5:0] load_image;
+    wire load_zoom;
+    assign auto_playing=auto_play_en;
     reg load_start_q;
     reg [31:0] load_sector_q;
     // A clocked catalog read maps the 64 sector addresses into block RAM.
@@ -77,7 +84,7 @@ module sd_card_bmp #(
     wire catalog_ready = scan_done && scan_kicked;
     wire finish_pulse = finish_sync[2]^finish_sync[1];
     wire source_error = bmp_ready && !bmp_ready_prev && load_error!=0;
-    wire auto_tick = auto_play_en && display_valid && auto_count==CLK_FREQ_HZ-1;
+    wire auto_tick = auto_play_en && display_valid && !navigation_busy && auto_count==AUTO_CYCLES-1;
     wire cache_reset = rst || !sd_init_done;
     assign image_count=found_count;
     assign write_data={bmp_data,8'd0};
@@ -140,7 +147,8 @@ module sd_card_bmp #(
                 else if(key_auto_press && catalog_ready && found_count>1) begin
                     auto_play_en<=~auto_play_en;auto_count<=0;
                 end else if(auto_play_en && display_valid && found_count>1) begin
-                    if(auto_tick || key_next_press || display_ack_sync[2]!=display_commit_toggle)
+                    if(auto_tick || key_next_press || key_previous_press || navigation_busy ||
+                       display_ack_sync[2]!=display_commit_toggle)
                         auto_count<=0;
                     else auto_count<=auto_count+1'b1;
                 end else auto_count<=0;
@@ -148,17 +156,19 @@ module sd_card_bmp #(
         end
     end
 
-    image_cache_controller u_cache(
+    image_cache_controller #(.SLOTS(CACHE_SLOTS),.BANK_BITS(BANK_BITS)) u_cache(
         .clk(clk),.rst(cache_reset),.catalog_ready(catalog_ready),.catalog_count(found_count),
         .next_request(key_next_press || auto_tick),.loader_ready(bmp_ready),
         .source_done(load_done),.source_error(source_error),
         .write_started(write_req && write_req_ack),.memory_done(finish_pulse),
         .load_start(load_start),.load_image(load_image),.load_slot(write_buf_idx),
+        .view_zoom(view_zoom),.load_zoom(load_zoom),.navigation_busy(navigation_busy),
         .display_ack_toggle(display_ack_sync[2]),.display_commit_toggle(display_commit_toggle),
         .pending_slot(disp_buf_idx),.display_valid(display_valid),
         .image_index(image_index),.cache_count(cache_count),.previous_request(key_previous_press));
 
     bmp_sector_player #(.ENABLE_SCALE(ENABLE_SCALE)) bmp_read_m0(
+        .view_zoom(!boot_mode&&load_zoom),
         .clk(clk),.rst(rst),.sd_init_done(sd_init_done),.ready(decoder_ready),.state_code(state_code),
         .scan_start(!boot_mode&&scan_start_pulse),.scan_start_sector(SCAN_START_SECTOR),
         .scan_max_sector(SCAN_MAX_SECTOR),.scan_target_count(SCAN_TARGET_COUNT),
