@@ -1,5 +1,14 @@
 # 当前交接
 
+## 2026-11-01 实时缩放修复与录制版资源裁减
+
+- 用户反馈上一版缩放不能实时往返。根因是解码阶段裁剪使缩放标签变化触发五槽失效、重读 TF；现正式 loader 固定整图解码，SDRAM 显示读出按帧锁定 FULL／CENTER 2X。中心取 320×240，每行读两遍、像素重复两次；不新增行／帧 RAM，缩放不重建缓存。frame_fifo_read／frame_read_write 新增默认关闭的 REALTIME_ZOOM 参数，正式 media_gallery 启用。
+- 首次增加实时读取时超出容量（4928／4900 MSlice）。依据用户此前授权，正式顶层移除 game_display_alignment 实例，固定 alignment_offset=128；校准页和图案被裁减，SW3 单独无校准功能，SW1＋SW3 显示设置保留。独立模块和测试仍在；正常 HDMI／DDC／PCM、游戏、五槽双向预取和三秒轮播未改。
+- 已先复现旧路径第二帧第0像素失败，再通过修复后整图→2X→整图测试。真实加密 SDRAM＋原厂 FIFO 完整三帧在 offset128／127／639 通过，覆盖帧中改变请求但当前帧不撕裂、并发写；每组三帧 921600 像素、768000 读词。真实IP非缩放 offset128 回归通过；image_cache_five、loader_cache、loader_recovery、lab_ui 四组通过；29IO／75RTL、85 staging 与 V4 配套、15项部署测试、diff --check 通过。未重跑整个游戏／20项全套；JEDEC 行为存储模型不等于实板或时序签核。
+- 原生 TD GUI RUN、真实 fix_hold -eco 并重生位流通过：bit 2026-11-01 19:34:40，636621 字节，SHA256 ff72bea09937af52d4d7bd05361b031f2c9ee33a762e99279d24fe33a5d45734；setup +2.435ns／hold +0.027ns；MSlice 4805／4900、LUT 18087／19600、BRAM 62／64、DSP 7／29。备份 build/rollback-evidence/realtime-zoom-20261101-193440/，原五槽版仍在 gallery-five-20261101-183530/。
+- README、board-demo、architecture、competition-status、测试说明已更新；本地 Git 按用户既有保存授权提交，不推送。不写实体卡、不烧板、不改 submission／摄影资料，不触碰未跟踪 doc/submission-plan.md。原 V4 卡不需重写。
+- 下一步用户下载新 bit：先检查对齐／BGM／游戏；首屏 SW1 图库按 KEY1 暂停，再打开 SW3，在显示设置第一项连续按 KEY1 验整图／中心2倍下一帧往返、无读卡加载，关 SW3 后再验三秒轮播及前后切图。实板尚未验收，不以数字通过代替。
+
 ## 2026-11-01 图库缩放、三秒轮播与五槽双向预取
 
 - 用户已确认实施并关闭 TD；本轮仅改图库／缓存／状态显示及相关测试。显示设置第一项接入 BMP 解码器：FULL IMAGE 整图最近邻缩放，CENTER 2X 中心裁半宽半高后铺满 640×480；缓存包含缩放标签，切换时保留旧 ACTIVE 帧，重建后帧边界切入。游戏图集强制原尺寸解码，默认横向补偿 128、HDMI／DDC／PCM 链未改。

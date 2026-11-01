@@ -27,6 +27,7 @@ TESTS = {
         'src/video/video_timing_data.v','ip/vendor/course/SD/color_bar.v','ip/vendor/course/SD/video_delay.v'],
 }
 TESTS['frame_path_six']=TESTS['frame_path']
+TESTS['frame_zoom']=TESTS['frame_path']
 
 def main():
     out = ROOT/'build/sim'
@@ -34,17 +35,17 @@ def main():
     results=[]
     for name, sources in TESTS.items():
         exe = out/(name+'.vvp')
-        bench={'image_cache_five':'image_cache','image_cache_six':'image_cache','frame_path_six':'frame_path'}.get(name,name)
+        bench={'image_cache_five':'image_cache','image_cache_six':'image_cache','frame_path_six':'frame_path','frame_zoom':'frame_path'}.get(name,name)
         params=[f'-Ptb_image_cache.SLOTS={5 if name=="image_cache_five" else 6}'] if name in ('image_cache_five','image_cache_six') else (
             ['-Ptb_frame_path.BANKS=6','-Ptb_frame_path.DISPLAY_SLOT=4','-Ptb_frame_path.ALIGN_OFFSET=128','-Ptb_frame_path.FREE_RASTER=1']
-            if name=='frame_path_six' else [])
+            if name=='frame_path_six' else (['-Ptb_frame_path.ZOOM_TEST=1','-Ptb_frame_path.ALIGN_OFFSET=128','-Ptb_frame_path.FREE_RASTER=1'] if name=='frame_zoom' else []))
         compiled=subprocess.run(['iverilog','-g2012','-Wall','-Iip/vendor/course/SD','-s','tb_'+bench,*params,'-o',str(exe),
                         *sources,'test/tb_'+bench+'.sv'],cwd=ROOT,capture_output=True,text=True)
         (out/(name+'_compile.log')).write_text(compiled.stdout+compiled.stderr)
         compiled.check_returncode()
         # The full-frame FIFO/DMA bench schedules nearly 200 million events.
         # Keep its wall-clock budget separate from the small unit benches.
-        timeout=300 if bench=='frame_path' else 120
+        timeout=600 if bench=='frame_path' else 120
         try:
             result=subprocess.run(['vvp',str(exe)],cwd=ROOT,capture_output=True,text=True,timeout=timeout)
         except subprocess.TimeoutExpired as error:

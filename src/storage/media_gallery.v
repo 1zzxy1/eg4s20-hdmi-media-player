@@ -16,7 +16,7 @@ module media_gallery(
     output wire asset_begin,asset_we,asset_commit,asset_failed,
     output wire [23:0] asset_rgb
 );
-    (* ASYNC_REG="TRUE" *) reg [1:0] ready_sync,auto_sync,zoom_sync,write_ack_sync,read_ack_sync;
+    (* ASYNC_REG="TRUE" *) reg [1:0] ready_sync,auto_sync,write_ack_sync,read_ack_sync;
     (* ASYNC_REG="TRUE" *) reg [1:0] play_sync,busy_sync;
     wire playing,browsing;
     assign auto_playing=play_sync[1];assign navigation_busy=busy_sync[1];
@@ -30,11 +30,10 @@ module media_gallery(
     wire commit_toggle,ack_toggle,commit_hold;
     reg write_toggle,read_pending,frame_d;
     always @(posedge sd_clk or posedge rst_sd)
-        if(rst_sd)begin ready_sync<=0;auto_sync<=0;zoom_sync<=0;write_ack_sync<=0;end
+        if(rst_sd)begin ready_sync<=0;auto_sync<=0;write_ack_sync<=0;end
         else begin
             ready_sync<={ready_sync[0],assets_ready};
             auto_sync<={auto_sync[0],auto_enable};
-            zoom_sync<={zoom_sync[0],view_zoom};
             write_ack_sync<={write_ack_sync[0],write_ack};
         end
     always @(posedge mem_clk or posedge rst_mem)
@@ -55,7 +54,7 @@ module media_gallery(
         .SCAN_START_SECTOR(32'd2048),.SCAN_MAX_SECTOR(32'd131071)) loader(
         .clk(sd_clk),.rst(rst_sd),.key_next(next_key_n),.key_auto(auto_key_n),
         .key_previous(previous_key_n),.auto_enable(auto_sync[1]),
-        .view_zoom(zoom_sync[1]),.auto_playing(playing),.navigation_busy(browsing),
+        .view_zoom(1'b0),.auto_playing(playing),.navigation_busy(browsing),
         .bmp_width(16'd640),.bmp_height(16'd480),
         .write_finish_toggle(write_toggle),.display_ack_toggle(ack_toggle),
         .display_commit_toggle(commit_toggle),.write_buf_idx(write_bank),.disp_buf_idx(pending_bank),
@@ -80,7 +79,7 @@ module media_gallery(
     wire [20:0] rd_addr,wr_addr;
     wire [31:0] mem_data,wr_data;
     wire [3:0] wr_mask;
-    frame_read_write #(.BURST_SIZE(128),.ALIGNMENT(1),.BANK_BITS(3)) frame_memory(
+    frame_read_write #(.BURST_SIZE(128),.ALIGNMENT(1),.REALTIME_ZOOM(1),.BANK_BITS(3)) frame_memory(
         .rst(rst_mem),.mem_clk(mem_clk),.Sdr_init_done(init_done),
         .Sdr_init_ref_vld(refreshing),.Sdr_busy(busy),.App_rd_en(app_rd),.App_rd_addr(rd_addr),
         .Sdr_rd_en(mem_valid),.Sdr_rd_dout(mem_data),
@@ -93,7 +92,7 @@ module media_gallery(
         .write_addr_0(21'd0),.write_addr_1(21'd307200),.write_addr_2(21'd614400),.write_addr_3(21'd921600),
         .write_addr_4(21'd1228800),.write_addr_5(21'd1536000),
         .write_addr_index(write_bank),.write_len(21'd307200),.write_en(write_en),
-        .write_data(write_data),.write_ready(write_ready),.alignment_offset(alignment_offset));
+        .write_data(write_data),.write_ready(write_ready),.alignment_offset(alignment_offset),.view_zoom(view_zoom));
     sdram u_sdram(.Clk(mem_clk),.Clk_sft(mem_clk_shift),.Rst(rst_mem),
         .Sdr_init_done(init_done),.Sdr_init_ref_vld(refreshing),.Sdr_busy(busy),
         .App_wr_en(app_wr),.App_wr_addr(wr_addr),.App_wr_dm(wr_mask),.App_wr_din(wr_data),

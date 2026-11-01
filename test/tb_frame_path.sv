@@ -5,7 +5,8 @@ module tb_frame_path #(
     parameter integer DISPLAY_SLOT = 2,
     parameter integer ALIGN_OFFSET = -1,
     parameter integer FREE_RASTER = 0,
-    parameter integer BANKS = 4
+    parameter integer BANKS = 4,
+    parameter integer ZOOM_TEST = 0
 );
     localparam integer FRAME_WORDS = 307200;
     localparam integer BACKGROUND_SLOT = (DISPLAY_SLOT + 1) % BANKS;
@@ -17,6 +18,8 @@ module tb_frame_path #(
     reg [BANK_BITS-1:0] write_bank_select=DISPLAY_SLOT;
     wire [BANK_BITS-1:0] read_bank_select=DISPLAY_SLOT;
     integer concurrent_writes=0;
+    reg view_zoom=0;
+    integer frames=0, sx, sy;
 `ifdef BMP_SOURCE
     wire wreq,we;wire [31:0] wd;
     reg bmp_start=0;
@@ -83,7 +86,7 @@ module tb_frame_path #(
     assign refresh=busy;assign initialized=!rst;
     assign returned=latency[3];assign returned_data=pipe[3];
 `endif
-    frame_read_write #(.BURST_SIZE(128),.ALIGNMENT(ALIGN_OFFSET>=0),.BANK_BITS(BANK_BITS)) dut(.rst(rst),.mem_clk(mc),.Sdr_init_done(initialized),
+    frame_read_write #(.BURST_SIZE(128),.ALIGNMENT(ALIGN_OFFSET>=0),.BANK_BITS(BANK_BITS),.REALTIME_ZOOM(ZOOM_TEST)) dut(.rst(rst),.mem_clk(mc),.Sdr_init_done(initialized),
         .Sdr_init_ref_vld(refresh),.Sdr_busy(busy),.App_rd_en(app_r),.App_rd_addr(raddr),
         .Sdr_rd_en(returned),.Sdr_rd_dout(returned_data),.read_clk(pc),.read_req(dma_request),.read_req_ack(ra),
         .read_finish(rfinish),.read_addr_0(21'd0),.read_addr_1(21'd307200),.read_addr_2(21'd614400),.read_addr_3(21'd921600),
@@ -94,7 +97,7 @@ module tb_frame_path #(
         .write_addr_0(21'd0),.write_addr_1(21'd307200),.write_addr_2(21'd614400),.write_addr_3(21'd921600),
         .write_addr_4(21'd1228800),.write_addr_5(21'd1536000),
         .write_addr_index(write_bank_select),.write_len(21'd307200),.write_en(we),.write_data(wd),.write_ready(wready),
-        .alignment_offset(offset_value));
+        .alignment_offset(offset_value),.view_zoom(view_zoom));
     always @(posedge pc) begin
         if(vrst) begin ack_sync<=0;read_started<=0;end
         else begin ack_sync<={ack_sync[0],ra};if(ack_sync[1]) read_started<=1;end
@@ -124,12 +127,21 @@ module tb_frame_path #(
             expected=pixels/640<240 ? ((pixels%640+offset_value)%640<320?24'hff0000:24'h00ff00) :
                 ((pixels%640+offset_value)%640<320?24'h0000ff:24'hffffff);
 `else
-            expected=((479-pixels/640)*640+(pixels%640+offset_value)%640)^24'h567890^(24'h010101*DISPLAY_SLOT);
+            sx=(pixels%640+offset_value)%640;
+            sy=pixels/640;
+            if(ZOOM_TEST&&frames==1)begin sx=160+sx/2;sy=120+sy/2;end
+            expected=((479-sy)*640+sx)^24'h567890^(24'h010101*DISPLAY_SLOT);
 `endif
             if(pixel!==expected[23:0]) $fatal(1,"FIFO/video pixel %0d got %h expected %h",pixels,pixel,expected[23:0]);
             pixels=pixels+1;
-            if(pixels==307200) begin
-                if(writes<307200||reads!=307200||concurrent_writes<10000)
+            // Change the requested mode mid-frame: the current raster must
+            // remain intact and the immediately following frame must change.
+            if(ZOOM_TEST&&pixels==153600)view_zoom=frames==0;
+            if(pixels==307200 && ZOOM_TEST && frames<2)begin
+                $display("PASS realtime zoom frame %0d mode=%0d reads=%0d",frames,frames==1,reads);
+                frames=frames+1;pixels=0;
+            end else if(pixels==307200) begin
+                if(writes<307200||reads!=(ZOOM_TEST?768000:307200)||concurrent_writes<10000)
                     $fatal(1,"DMA count/overlap %0d %0d %0d",writes,reads,concurrent_writes);
 `ifdef REAL_SDRAM
                 $display("PASS frame path with vendor encrypted SDRAM controller; display slot=%0d background slot=%0d concurrent writes=%0d",DISPLAY_SLOT,BACKGROUND_SLOT,concurrent_writes);

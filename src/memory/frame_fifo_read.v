@@ -8,6 +8,8 @@ module frame_fifo_read
 	parameter BURST_BITS             = 9,
 	parameter FIFO_DEPTH             = 512,
 	parameter BURST_SIZE             = 128,
+    parameter REALTIME_ZOOM         = 0,
+    parameter FRAME_HEIGHT          = 480,
     parameter ALIGNMENT             = 0,
     parameter FRAME_WIDTH           = 640
 )               
@@ -43,6 +45,8 @@ module frame_fifo_read
 	output reg                       fifo_aclr,                  // to fifo asynchronous clear
 	input[9:0]                      wrusedw,                    // from fifo write used words
     input wire [9:0] alignment_offset,
+    input wire view_zoom,
+    output reg zoom_latch,
     output reg [3:0] read_shift
 
 );
@@ -69,12 +73,19 @@ reg[BANK_BITS-1:0]                   read_addr_index_d1;         //synchronize t
 reg [ADDR_BITS - 1:0]	 App_rd_addr_r;
 (* ASYNC_REG="TRUE" *) reg [9:0] offset_sync0,offset_sync1;
 reg [9:0] offset_latch,logical_x,source_x;
+reg [ADDR_BITS-1:0] row_start;
+reg row_repeat;
+(* ASYNC_REG="TRUE" *) reg [1:0] zoom_sync;
+wire [9:0] aligned_offset={offset_sync1[9:4],4'b0000};
+wire [9:0] zoom_offset=ALIGNMENT?{5'd0,offset_sync1[9:5]}<<4:10'd0;
+wire [ADDR_BITS-1:0] initial_offset=(REALTIME_ZOOM&&zoom_sync[1])?
+    (FRAME_HEIGHT/4)*FRAME_WIDTH+FRAME_WIDTH/4+zoom_offset:
+    (ALIGNMENT?aligned_offset:0);
 // The controller interleaves four BL4 banks. Its address stream must start
 // on a 16-word boundary; frame_read_write rotates the residual pixels.
-wire [9:0] aligned_offset={offset_sync1[9:4],4'b0000};
 always @(posedge mem_clk or posedge rst)
-    if(rst)begin offset_sync0<=0;offset_sync1<=0;end
-    else begin offset_sync0<=alignment_offset;offset_sync1<=offset_sync0;end
+    if(rst)begin offset_sync0<=0;offset_sync1<=0;zoom_sync<=0;end
+    else begin offset_sync0<=alignment_offset;offset_sync1<=offset_sync0;zoom_sync<={zoom_sync[0],view_zoom};end
 
 reg [BURST_BITS - 1:0]				burst_cnt;
 wire								rd_burst_finish;
@@ -135,7 +146,7 @@ begin
 		burst_cnt <= ZERO[BURST_BITS - 1:0];
 		App_rd_addr_r <= ZERO[ADDR_BITS - 1:0];
 		App_rd_en_d0 <= 1'b0;
-		offset_latch<=0;logical_x<=0;source_x<=0;read_shift<=0;
+		offset_latch<=0;logical_x<=0;source_x<=0;read_shift<=0;zoom_latch<=0;row_start<=0;row_repeat<=0;
 	end
 	else begin
 	
@@ -148,24 +159,39 @@ begin
 		//
 		if(state == S_ACK)
 			begin
-				offset_latch<=ALIGNMENT?aligned_offset:0;
-                read_shift<=ALIGNMENT?offset_sync1[3:0]:0;
-                logical_x<=0;source_x<=ALIGNMENT?aligned_offset:0;
+				zoom_latch<=REALTIME_ZOOM&&zoom_sync[1];row_repeat<=0;
+                offset_latch<=REALTIME_ZOOM&&zoom_sync[1]?zoom_offset:(ALIGNMENT?aligned_offset:0);
+                read_shift<=ALIGNMENT?(REALTIME_ZOOM&&zoom_sync[1]?offset_sync1[4:1]:offset_sync1[3:0]):0;
+                logical_x<=0;
+                source_x<=REALTIME_ZOOM&&zoom_sync[1]?zoom_offset:(ALIGNMENT?aligned_offset:0);
 				if(read_addr_index_d1 == 2'd0)
-					App_rd_addr_r <= read_addr_0+(ALIGNMENT?aligned_offset:0);
+					begin App_rd_addr_r <= read_addr_0+initial_offset;row_start<=read_addr_0+initial_offset;end
 				else if(read_addr_index_d1 == 2'd1)
-					App_rd_addr_r <= read_addr_1+(ALIGNMENT?aligned_offset:0);
+					begin App_rd_addr_r <= read_addr_1+initial_offset;row_start<=read_addr_1+initial_offset;end
 				else if(read_addr_index_d1 == 2'd2)
-					App_rd_addr_r <= read_addr_2+(ALIGNMENT?aligned_offset:0);
+					begin App_rd_addr_r <= read_addr_2+initial_offset;row_start<=read_addr_2+initial_offset;end
 				else if(read_addr_index_d1 == 2'd3)
-					App_rd_addr_r <= read_addr_3+(ALIGNMENT?aligned_offset:0);
+					begin App_rd_addr_r <= read_addr_3+initial_offset;row_start<=read_addr_3+initial_offset;end
 				else if(read_addr_index_d1 == 3'd4)
-					App_rd_addr_r <= read_addr_4+(ALIGNMENT?aligned_offset:0);
+					begin App_rd_addr_r <= read_addr_4+initial_offset;row_start<=read_addr_4+initial_offset;end
 				else if(read_addr_index_d1 == 3'd5)
-					App_rd_addr_r <= read_addr_5+(ALIGNMENT?aligned_offset:0);
+					begin App_rd_addr_r <= read_addr_5+initial_offset;row_start<=read_addr_5+initial_offset;end
 			end
 		else if(App_rd_en)
-            if(ALIGNMENT)begin
+            if(REALTIME_ZOOM&&zoom_latch)begin
+                // Read the center 320 pixels; repeat each source row twice.
+                // All discontinuities stay on 16-word controller boundaries.
+                if(logical_x==FRAME_WIDTH/2-1)begin
+                    logical_x<=0;source_x<=offset_latch;row_repeat<=!row_repeat;
+                    App_rd_addr_r<=row_start+(row_repeat?FRAME_WIDTH:0);
+                    if(row_repeat)row_start<=row_start+FRAME_WIDTH;
+                end else begin
+                    logical_x<=logical_x+1'b1;
+                    source_x<=source_x==FRAME_WIDTH/2-1?0:source_x+1'b1;
+                    App_rd_addr_r<=source_x==FRAME_WIDTH/2-1?
+                        App_rd_addr_r-(FRAME_WIDTH/2-1):App_rd_addr_r+1'b1;
+                end
+            end else if(ALIGNMENT)begin
                 if(logical_x==FRAME_WIDTH-1)begin
                     logical_x<=0;source_x<=offset_latch;
                     App_rd_addr_r<=App_rd_addr_r+(offset_latch==0?1:FRAME_WIDTH+1);
@@ -240,7 +266,7 @@ begin
 						App_rd_addr <= read_addr_3;
 					*/
 					//latch data length
-					read_len_latch <= read_len_d1;
+					read_len_latch <= REALTIME_ZOOM&&zoom_sync[1]?read_len_d1>>1:read_len_d1;
 				end
 				//read data counter reset, read_cnt <= 0;
 				read_cnt <= ZERO[ADDR_BITS - 1:0];

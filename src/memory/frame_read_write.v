@@ -12,6 +12,7 @@ module frame_read_write
 	parameter WRITE_V_FLIP           = 1,      // 1: vertical flip when writing TF/BMP frame into SDRAM
 	parameter FRAME_WIDTH            = 640,
 	parameter FRAME_HEIGHT           = 480,
+    parameter REALTIME_ZOOM          = 0,
     parameter ALIGNMENT              = 0
 ) 
 (
@@ -75,6 +76,7 @@ module frame_read_write
 	input                            write_en,                   // data write module write request for one data
 	input[WRITE_DATA_BITS - 1:0]     write_data,
     output wire                     write_ready,
+    input wire view_zoom,
     input wire [9:0]                 alignment_offset
 
 );
@@ -90,6 +92,29 @@ wire								 App_wr_busy;
 wire                                 read_fifo_aclr;             // fifo Asynchronous clear
 wire                                 write_fifo_aclr;            // fifo Asynchronous clear
 wire [3:0] read_shift;
+wire zoom_mem;
+reg zoom_pix,request_d,odd_offset;
+reg [9:0] output_column;
+reg first_pending,last_pixel;
+reg [READ_DATA_BITS-1:0] first_pixel;
+wire [READ_DATA_BITS-1:0] fifo_read_data;
+wire fifo_read_en=read_en&&(!REALTIME_ZOOM||!zoom_pix||output_column==0||
+    (output_column[0]==odd_offset&&output_column!=FRAME_WIDTH-1));
+assign read_data=REALTIME_ZOOM&&last_pixel?first_pixel:fifo_read_data;
+always @(posedge read_clk or posedge rst)begin
+    if(rst)begin zoom_pix<=0;request_d<=0;odd_offset<=0;output_column<=0;
+        first_pending<=0;first_pixel<=0;last_pixel<=0;end
+    else begin
+        request_d<=read_req;
+        if(read_req&&!request_d)begin
+            zoom_pix<=REALTIME_ZOOM&&view_zoom;odd_offset<=ALIGNMENT&&alignment_offset[0];
+            output_column<=0;
+        end else if(read_en)output_column<=output_column==FRAME_WIDTH-1?0:output_column+1'b1;
+        first_pending<=read_en&&output_column==0;
+        if(first_pending)first_pixel<=fifo_read_data;
+        last_pixel<=read_en&&zoom_pix&&odd_offset&&output_column==FRAME_WIDTH-1;
+    end
+end
 wire fifo_pixel_valid;
 wire [MEM_DATA_BITS-1:0] fifo_pixel;
 generate if(ALIGNMENT)begin:rotate_line
@@ -114,7 +139,7 @@ generate if(ALIGNMENT)begin:rotate_line
                     prefix[column[3:0]]<=Sdr_rd_dout;
                     if(row!=0)begin pixel<=prefix[column[3:0]];valid<=1;end
                 end else begin pixel<=Sdr_rd_dout;valid<=1;end
-                if(column==FRAME_WIDTH-1)begin
+                if(column==(REALTIME_ZOOM&&zoom_mem?FRAME_WIDTH/2-1:FRAME_WIDTH-1))begin
                     column<=0;row<=row+1'b1;
                     if(row==FRAME_HEIGHT-1&&read_shift!=0)begin flushing<=1;flush_index<=0;end
                 end else column<=column+1'b1;
@@ -203,13 +228,13 @@ rfifo_32_32_512 read_buf
 	.clkw                     	(mem_clk                    ),          // Write side clock
 	.rst                      	(read_fifo_aclr             ),          // Asynchronous clear
 	.we                     	(fifo_pixel_valid),          // Write Request
-	.re                     	(read_en                    ),          // Read Request
+	.re                     	(fifo_read_en               ),          // Read Request
 	.di                      	(fifo_pixel),          // Input Data
 	.empty_flag					(                           ),          // Read side Empty flag
 	.full_flag					(                           ),          // Write side Full flag
 	.wrusedw                	(wrusedw_raw                  ),          // Read Used Words
 	.rdusedw                	(                  			 ),          // Write Used Words
-	.dout						(read_data                  )
+	.dout						(fifo_read_data             )
 );
 
 frame_fifo_read
@@ -220,6 +245,8 @@ frame_fifo_read
 	.ADDR_BITS                  (ADDR_BITS                ),
 	.BURST_BITS                 (BURST_BITS               ),
 	.BURST_SIZE                 (BURST_SIZE               ),
+    .REALTIME_ZOOM              (REALTIME_ZOOM),
+    .FRAME_HEIGHT               (FRAME_HEIGHT),
     .ALIGNMENT                  (ALIGNMENT),
     .FRAME_WIDTH                (FRAME_WIDTH)
 )
@@ -250,6 +277,8 @@ frame_fifo_read_m0
 	.fifo_aclr                  (read_fifo_aclr           ),
 	.wrusedw                	(wrusedw                  ),
     .alignment_offset           (alignment_offset),
+    .view_zoom                  (zoom_pix),
+    .zoom_latch                 (zoom_mem),
     .read_shift                 (read_shift)
 );
 

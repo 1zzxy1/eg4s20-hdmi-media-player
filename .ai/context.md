@@ -1,6 +1,6 @@
 # 当前上下文
 
-2026-11-01 当前候选五槽图库版：视口设置接入整图缩放／中心2倍放大，上电图集验证后后台预取当前＋前1＋后3；SW1即开三秒轮播，KEY1暂停，KEY2前／KEY3后，HUD有AUTO状态。正式五槽（六槽超过MSlice容量），用户允许必要时删校准页但本版已通过故保留；默认补偿128及正常HDMI／PCM链未改。原生TD与hold ECO已过：bit 2026-11-01 18:35:30，hash045d8aae090494121cbc304b595e28db0cc5e9c3c95d3bdfb95e61fe53ee155d，setup+2.435ns／hold+0.022ns，MSlice4887／4900、LUT18415／19600、BRAM63／64、DSP7。专项仿真／工程／部署检查通过，详见handoff顶部；未全量verify、未实板验收。原V4卡不重写，不烧板、不改提交材料、不推送。候选bit／报告备份build/rollback-evidence/gallery-five-20261101-183530/；上次功能改动前备份pre-gallery-20261101/。以下旧日期“最新”皆为历史。
+2026-11-01 最新实时缩放修复：整图常驻五槽，放大／缩回由 SDRAM 读出下一帧切换，不重读 TF／不使缓存失效。首次实现超 MSlice 后按用户授权移除正式顶层校准页，固定已实测正确补偿128；独立校准源码保留，SW1＋SW3显示设置不变，正常HDMI／PCM与游戏不改。TD GUI RUN＋真实hold ECO通过：bit 19:34:40，636621字节，hash ff72bea09937af52d4d7bd05361b031f2c9ee33a762e99279d24fe33a5d45734，setup+2.435ns／hold+0.027ns，MSlice4805／4900、LUT18087／19600、BRAM62／64、DSP7。真实加密SDRAM／FIFO三帧FULL→2X→FULL覆盖offset128／127／639及帧中切换通过，四组缓存／轮播／坏图／叠层回归和工程／部署检查通过；未全量verify、未实板验收。详见handoff顶部，备份build/rollback-evidence/realtime-zoom-20261101-193440/。原V4卡不改，不烧板、不改submission、不推送；doc/submission-plan.md为用户无关文件不碰。
 
 2026-10-31 技术文档新增 8 张 SVG 矢量图，位于上级 submission/技术文档配图，并已嵌入最终 Markdown；剩余 12 个配图标记均为用户自行补充的实拍、原理图局部或 TD 截图。详见 handoff 顶部。
 

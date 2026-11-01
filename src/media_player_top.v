@@ -20,9 +20,11 @@ module media_player_top(
     wire [3:0] frame_switches;
     wire alignment_active,alignment_block;
     wire [9:0] alignment_offset;
-    game_display_alignment u_alignment(.clk(pix_clk),.rst(rst_pix),.frame_tick(frame_tick),
-        .keys_n(keys_n),.switches({1'b0,(game_state==0&&switches[2]&&!switches[0]&&!switches[3]),2'b00}),.active(alignment_active),
-        .block_controls(alignment_block),.offset(alignment_offset));
+    // Recording build: retain the board-confirmed alignment and reclaim the
+    // interactive calibration page for the real-time gallery reader.
+    assign alignment_active=1'b0;
+    assign alignment_block=1'b0;
+    assign alignment_offset=10'd128;
     wire lab_active,debug_mode,media_fullscreen,osd_enable,calibration;
     wire menu_active=lab_active||alignment_block;
     wire view_narrow,palette_mode,reset_game,scores_request,profile_request;
